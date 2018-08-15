@@ -1,1 +1,1 @@
-# x-feed-sdk-golang
+# X-feed SDK in Golang (Alpha)
