@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-import "events_stream.proto";
-import "settlement_stream.proto";
-import "sport_descriptions.proto";
+import "feed/events_stream.proto";
+import "feed/settlement_stream.proto";
+import "feed/sport_descriptions.proto";
 
 package feed;
 

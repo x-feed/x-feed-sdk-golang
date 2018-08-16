@@ -20,3 +20,7 @@ type Client struct {
 
 	lg *logger.LogEntry
 }
+
+func NewClient(cfg Config) (*Client, error) {
+	return nil, nil
+}
