@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # Generate all protobuf stubs.
-# Run from repository root.
+# Run from repository root ./scripts/genproto.sh
 #
 set -e
 
