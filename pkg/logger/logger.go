@@ -1,15 +1,6 @@
 package logger
 
-// Fields represents a set of log message fields
 type Fields map[string]interface{}
-
-type Formatter string
-
-const (
-	TextFormatter Formatter = "TXT"
-	JSONFormatter Formatter = "JSON"
-)
-
 
 type LogEntry interface {
 	Debug(v ...interface{})
@@ -34,15 +25,3 @@ type LogEntry interface {
 	WithFields(Fields) LogEntry
 	WithError(err error) LogEntry
 }
-
-type Logger interface {
-	SetLevel(string)
-	SetFormatter(Formatter)
-	SetOutput(string)
-	SetTimestampFormat(format string)
-
-	WithField(key string, value interface{}) LogEntry
-	WithFields(fields Fields) LogEntry
-	WithError(err error) LogEntry
-}
-

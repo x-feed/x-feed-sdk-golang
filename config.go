@@ -5,11 +5,14 @@ import (
 )
 
 type Config struct {
-
 	ClientID string
 
 	// grpc transport specific parameters
-	ServerURI               string
+	ServerURI string
+
+	// DialTimeout is the timeout for failing to establish a connection.
+	DialTimeout time.Duration
+
 	RequestDeadline         time.Duration
 	RequestRateLimit        float64
 	RequestRateLimitBurst   int
