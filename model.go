@@ -1,31 +1,100 @@
 package xa
 
-import pb "github.com/x-feed/x-feed-sdk-golang/pkg/feed"
+import (
+	"time"
+)
 
+// sport description DTOs
 type (
-	SportDescription pb.SportDescription
-	Period           pb.Period
-	MarketType       pb.MarketType
-	OutcomeType      pb.OutcomeType
+	SportDescription struct {
+		SportID     int32
+		SportName   string
+		Periods     []*Period
+		MarketTypes []*MarketType
+	}
 
-	Event       pb.FeedEvent
-	EventStatus pb.FeedEvent_EventStatus // just const
+	Period struct {
+		PeriodID   int32
+		PeriodName string
+	}
 
-	EventTimer      pb.EventTimer
-	EventTimerState pb.EventTimer_TimerState // constants
+	MarketType struct {
+		MarketTypeID       int32
+		MarketNameTemplate string
+		OutcomeTypes       []*OutcomeType
+	}
 
-	Market          pb.FeedMarket
-	MarketParam     pb.FeedMarketParam
-	MarketParamType pb.FeedMarketParam_MarketParamType // constants
-	Outcome         pb.FeedOutcome
+	OutcomeType struct {
+		OutcomeTypeID       int32
+		OutcomeNameTemplate string
+	}
+)
 
-	EventSettlement       pb.EventSettlement
-	Resulting             pb.FeedResulting
-	ResultGroup           pb.FeedResulting_ResultGroup
-	ResultGroupPeriod     pb.FeedResulting_ResultGroup_ResultGroupParams
-	ResultGroupResult     pb.FeedResulting_ResultGroup_Result
-	ResultGroupResultTeam pb.FeedResulting_ResultGroup_Result_ResultParams
+// Event DTOs
+type (
+	Event struct {
+		EventId      string
+		SportId      int32
+		Category     string
+		League       string
+		Status       EventStatus
+		StartTs      *time.Time
+		Participants []string
+		Timer        *EventTimer
+	}
+	EventStatus int32 // just const
 
-	OutcomeSettlement       pb.OutcomeSettlement
-	OutcomeSettlementStatus pb.OutcomeSettlement_SettlementType // constants
+	EventTimer struct {
+		ChangedTs *time.Time
+		Time      *time.Duration
+		State     EventTimerState
+	}
+	EventTimerState int32 // constants
+)
+
+// market DTOs
+type (
+	Market struct {
+		MarketId     string
+		MarketType   int32
+		MarketParams []*MarketParam
+		Outcomes     []*Outcome
+	}
+	MarketParam struct {
+		Type  MarketParamType
+		Value string
+	}
+	MarketParamType int32 // constants
+	Outcome         struct {
+		OutcomeId   string
+		OutcomeType int32
+		Value       string
+		Suspended   bool
+	}
+)
+
+// settlement DTO
+type (
+	EventSettlement struct {
+		EventId   string
+		Resulting *Resulting
+		Outcomes  map[string]*OutcomeSettlement
+	}
+	Resulting struct {
+		ResultGroups []*ResultGroup
+	}
+	ResultGroup struct {
+		ResultGroupId int32
+		Params        *ResultGroupPeriod
+		Results       []*ResultGroupResult
+	}
+	ResultGroupPeriod int32
+	ResultGroupResult struct {
+		Params *ResultGroupResultTeam
+		Value  int32
+	}
+	ResultGroupResultTeam int32
+
+	OutcomeSettlement       OutcomeSettlementStatus
+	OutcomeSettlementStatus int32 // constants
 )
