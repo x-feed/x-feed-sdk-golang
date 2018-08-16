@@ -1,0 +1,111 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+import "google/protobuf/duration.proto";
+
+package feed;
+
+
+message StreamEventsRequest {
+    string client_name = 1;
+}
+
+message StreamEventsResponse {
+    oneof data {
+        DiffsMessage events_message = 1;
+        EventsRecoveryComplete recovery_complete = 2;
+    }
+    google.protobuf.Timestamp generated_ts = 3;
+}
+
+message DiffsMessage {
+    repeated EventDiff event_diffs = 1;
+    repeated MarketsDiff market_diffs = 2;
+}
+
+message EventsRecoveryComplete {
+}
+
+enum DiffType {
+    unknown = 0;
+    INSERT = 1;
+    DELETE = 2;
+    UPDATE = 3;
+}
+
+////////// Events //////////
+
+message EventDiff {
+    DiffType diff_type = 1;
+    FeedEvent event = 2;
+}
+
+message EventTimer {
+    enum TimerState {
+        unknown = 0;
+        FORWARD = 1;
+        BACKWARD = 2;
+        PAUSE = 3;
+    }
+    google.protobuf.Timestamp changed_ts = 1;
+    google.protobuf.Duration time = 2;
+    TimerState state = 3;
+}
+
+message FeedEvent {
+    enum EventStatus {
+        unknown = 0;
+        PREMATCH = 1;
+        LIVE = 2;
+    }
+
+    string event_id = 1;  //unique event identifier
+    int32 sport_id = 2;
+    string category = 3;
+    string league = 4;
+    EventStatus status = 5;
+    google.protobuf.Timestamp start_ts = 6;
+    repeated string participants = 7;
+    EventTimer timer = 8;  // only live
+    // TODO: statistics
+}
+
+message FeedOutcome {
+    string outcome_id = 1; // unique for all time, use for settlement.
+    int32 outcome_type = 4;
+    string value = 2;
+    bool suspended = 3;
+}
+
+////////// Markets //////////
+
+message MarketsDiff {
+    string event_id = 1;
+    repeated SingleMarketDiff markets_diffs = 2;
+}
+
+message SingleMarketDiff {
+    DiffType diff_type = 1;
+    FeedMarket market = 2;
+}
+
+message FeedMarket {
+    string market_id = 1;  // unique per event. use for diffs apply.
+    int32 market_type = 2;
+    repeated FeedMarketParam market_params = 3;
+    repeated FeedOutcome outcomes = 4;
+}
+
+message FeedMarketParam {
+    enum MarketParamType {
+        unknown = 0;
+        PERIOD = 1;
+        TOTAL = 2;
+        HANDICAP = 3;
+        TEAM = 4;
+    }
+    MarketParamType type = 1;
+    string value = 2;
+}
+
+//////////////////////////////

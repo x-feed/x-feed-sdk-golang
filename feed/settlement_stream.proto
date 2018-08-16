@@ -1,0 +1,64 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package feed;
+
+
+message StreamSettlementsRequest {
+    string client_name = 1;
+    google.protobuf.Timestamp last_consumed_timestamp = 2;
+}
+
+message StreamSettlementsResponse {
+    oneof data {
+        MultipleEventsSettlement multiple_events_settlement = 1;
+        SettlementRecoveryComplete recovery_complete = 2;
+    }
+    google.protobuf.Timestamp diff_timestamp = 3;
+}
+
+message SettlementRecoveryComplete {
+}
+
+message MultipleEventsSettlement {
+    repeated EventSettlement event_settlement = 1;
+}
+
+message EventSettlement {
+    string event_id = 1;
+    FeedResulting resulting = 2;
+    map<string,  OutcomeSettlement> outcomes = 3; // key is outcome_id
+}
+
+message FeedResulting {
+    message ResultGroup {
+        message ResultGroupParams {
+            int32 period = 1;
+        }
+        message Result {
+            message ResultParams {
+                int32 team = 1;
+            }
+            ResultParams params = 1;
+            int32 value = 2;
+        }
+
+        int32 result_group_id = 1; //  resulting type: score, corners, etc.
+        ResultGroupParams params = 2;
+        repeated Result results = 3;
+    }
+    repeated ResultGroup result_groups = 1;
+}
+
+message OutcomeSettlement{
+    enum SettlementType {
+        unknown = 0;
+        UNSETTLED = 1;
+        WIN = 2;
+        LOSE = 3;
+        RETURN = 4;
+    }
+    SettlementType settlement = 1;
+    // TODO: bet_cancel timeline
+}
