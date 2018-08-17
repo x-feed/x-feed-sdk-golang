@@ -40,11 +40,26 @@ type (
 	}
 
 	PointsGroup struct {
-		PointType            PointsGroup_PointType
-		GroupParams          *GroupParams
-		State                []*State
+		PointType     PointType
+		GroupPeriodID int32
+		State         []*State
 	}
 
+	PointType int32
+
+	State struct {
+		Participant int32
+		Value       int32
+	}
+)
+
+const (
+	PointTypeUnknown     PointType = 0
+	PointTypeScore       PointType = 1
+	PointTypeRedСards    PointType = 2
+	PointTypeYellowСards PointType = 3
+	PointTypePenalties   PointType = 4
+	PointTypeCorners     PointType = 5
 )
 
 // Event DTOs
@@ -61,7 +76,7 @@ type (
 		Statistics   *EventPoints
 	}
 
-	EventStatus int32 // just consts
+	EventStatus int32
 
 	EventTimer struct {
 		Changed *time.Time
@@ -69,7 +84,7 @@ type (
 		State   TimerState
 	}
 
-	TimerState int32 // constants
+	TimerState int32
 )
 
 const (
@@ -99,7 +114,7 @@ type (
 		Value string
 	}
 
-	MarketParamType int32 // constants
+	MarketParamType int32
 
 	Outcome struct {
 		OutcomeID   string
@@ -121,13 +136,19 @@ const (
 type (
 	EventSettlement struct {
 		EventID   string
-		Resulting            *EventPoints
-		Outcomes  map[string]*OutcomeSettlementStatus
+		Resulting *EventPoints
+		Outcomes  map[string]OutcomeSettlementStatus
 	}
 
-	OutcomeSettlementStatus int32 // constants
+	OutcomeSettlementStatus int32
+)
 
-
+const (
+	OutcomeSettlementUnknown   OutcomeSettlementStatus = 0
+	OutcomeSettlementUnsettled OutcomeSettlementStatus = 1
+	OutcomeSettlementWin       OutcomeSettlementStatus = 2
+	OutcomeSettlementLose      OutcomeSettlementStatus = 3
+	OutcomeSettlementReturn    OutcomeSettlementStatus = 4
 )
 
 func NewSportDescription(sportDescription pb.SportDescription) *SportDescription {
@@ -138,6 +159,9 @@ func NewSportDescription(sportDescription pb.SportDescription) *SportDescription
 
 	result.Periods = make([]*Period, 0, len(sportDescription.GetPeriods()))
 	for _, period := range sportDescription.GetPeriods() {
+		if period == nil {
+			continue
+		}
 		result.Periods = append(result.Periods, &Period{
 			PeriodID:   period.GetPeriodId(),
 			PeriodName: period.GetPeriodName(),
@@ -146,12 +170,18 @@ func NewSportDescription(sportDescription pb.SportDescription) *SportDescription
 
 	result.MarketTypes = make([]*MarketType, 0, len(sportDescription.GetMarketTypes()))
 	for _, marketType := range sportDescription.GetMarketTypes() {
+		if marketType == nil {
+			continue
+		}
 		mt := &MarketType{
 			MarketTypeID:       marketType.GetMarketTypeId(),
 			MarketNameTemplate: marketType.GetMarketNameTemplate(),
 		}
 		mt.OutcomeTypes = make([]*OutcomeType, 0, len(marketType.GetOutcomeTypes()))
 		for _, outcomeType := range marketType.GetOutcomeTypes() {
+			if outcomeType == nil {
+				continue
+			}
 			mt.OutcomeTypes = append(mt.OutcomeTypes, &OutcomeType{
 				OutcomeTypeID:       outcomeType.GetOutcomeTypeId(),
 				OutcomeNameTemplate: outcomeType.GetOutcomeNameTemplate(),
@@ -241,6 +271,9 @@ func NewMarket(feedMarket *pb.FeedMarket) *Market {
 
 	market.MarketParams = make([]*MarketParam, 0, len(feedMarket.GetMarketParams()))
 	for _, marketParam := range feedMarket.GetMarketParams() {
+		if marketParam == nil {
+			continue
+		}
 		market.MarketParams = append(market.MarketParams, &MarketParam{
 			Type:  NewMarketParamType(marketParam.GetType()),
 			Value: marketParam.GetValue(),
@@ -249,6 +282,9 @@ func NewMarket(feedMarket *pb.FeedMarket) *Market {
 
 	market.Outcomes = make([]*Outcome, 0, len(feedMarket.GetOutcomes()))
 	for _, outcome := range feedMarket.GetOutcomes() {
+		if outcome == nil {
+			continue
+		}
 		market.Outcomes = append(market.Outcomes, &Outcome{
 			OutcomeID:   outcome.GetOutcomeId(),
 			OutcomeType: outcome.GetOutcomeType(),
@@ -277,16 +313,94 @@ func NewMarketParamType(marketParamType pb.FeedMarketParam_MarketParamType) Mark
 	}
 }
 
-func NewEventSettlement(settlement pb.EventSettlement)(*EventSettlement){
+func NewEventSettlement(settlement pb.EventSettlement) *EventSettlement {
 	eventSettlement := &EventSettlement{
-		EventID: settlement.GetEventId(),
-		Resulting: settlement.GetResulting(),
+		EventID:   settlement.GetEventId(),
+		Resulting: NewEventPoints(settlement.GetResulting()),
+		Outcomes:  make(map[string]OutcomeSettlementStatus),
+	}
+	for outcomeID, settlementStatus := range settlement.GetOutcomes() {
+		if settlementStatus == nil {
+			eventSettlement.Outcomes[outcomeID] = OutcomeSettlementUnknown
+			continue
+		}
+		status := settlementStatus.GetSettlement()
+		eventSettlement.Outcomes[outcomeID] = NewOutcomeSettlementStatus(status)
 	}
 
-
-
+	return eventSettlement
 }
 
-func NewResulting(resulting pb.EventPoints) (*Resulting) {
+func NewEventPoints(eventPoints *pb.EventPoints) *EventPoints {
+	if eventPoints == nil {
+		return nil
+	}
 
+	points := &EventPoints{
+		PointGroups: make([]*PointsGroup, 0, len(eventPoints.GetPointGroups())),
+	}
+	for _, pointGroup := range eventPoints.GetPointGroups() {
+		var periodID int32
+		var states []*State
+		if pointGroup.GetGroupParams() != nil {
+			periodID = pointGroup.GetGroupParams().Period
+		}
+
+		for _, state := range pointGroup.GetState() {
+			if state == nil {
+				continue
+			}
+			s := &State{
+				Value: state.GetValue(),
+			}
+			if state.GetStateParams() != nil {
+				s.Participant = state.GetStateParams().GetParticipant()
+			}
+			states = append(states, s)
+		}
+
+		points.PointGroups = append(points.PointGroups, &PointsGroup{
+			PointType:     NewPointType(pointGroup.GetPointType()),
+			GroupPeriodID: periodID,
+			State:         states,
+		})
+	}
+
+	return points
+}
+
+func NewPointType(pointType pb.PointsGroup_PointType) PointType {
+	switch pointType {
+	case pb.PointsGroup_SCORE:
+		return PointTypeScore
+	case pb.PointsGroup_RED_CARDS:
+		return PointTypeRedСards
+	case pb.PointsGroup_YELLOW_CARDS:
+		return PointTypeYellowСards
+	case pb.PointsGroup_PENALTIES:
+		return PointTypePenalties
+	case pb.PointsGroup_CORNERS:
+		return PointTypeCorners
+	case pb.PointsGroup_unknown:
+		fallthrough
+	default:
+		return PointTypeUnknown
+	}
+}
+
+func NewOutcomeSettlementStatus(status pb.OutcomeSettlement_SettlementType) OutcomeSettlementStatus {
+	switch status {
+	case pb.OutcomeSettlement_RETURN:
+		return OutcomeSettlementReturn
+	case pb.OutcomeSettlement_LOSE:
+		return OutcomeSettlementLose
+	case pb.OutcomeSettlement_WIN:
+		return OutcomeSettlementWin
+	case pb.OutcomeSettlement_UNSETTLED:
+		return OutcomeSettlementUnsettled
+	case pb.OutcomeSettlement_unknown:
+		fallthrough
+	default:
+		return OutcomeSettlementUnknown
+	}
 }
