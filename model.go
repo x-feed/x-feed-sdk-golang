@@ -1,4 +1,4 @@
-package xa
+package xfeed
 
 import (
 	"time"
@@ -34,17 +34,31 @@ type (
 	}
 )
 
+type (
+	EventPoints struct {
+		PointGroups []*PointsGroup
+	}
+
+	PointsGroup struct {
+		PointType            PointsGroup_PointType
+		GroupParams          *GroupParams
+		State                []*State
+	}
+
+)
+
 // Event DTOs
 type (
 	Event struct {
-		EventId      string
-		SportId      int32
+		EventID      string
+		SportID      int32
 		Category     string
 		League       string
 		Status       EventStatus
 		Start        *time.Time
 		Participants []string
 		Timer        *EventTimer
+		Statistics   *EventPoints
 	}
 
 	EventStatus int32 // just consts
@@ -106,27 +120,14 @@ const (
 // settlement DTO
 type (
 	EventSettlement struct {
-		EventId   string
-		Resulting *Resulting
-		Outcomes  map[string]*OutcomeSettlement
+		EventID   string
+		Resulting            *EventPoints
+		Outcomes  map[string]*OutcomeSettlementStatus
 	}
-	Resulting struct {
-		ResultGroups []*ResultGroup
-	}
-	ResultGroup struct {
-		ResultGroupId int32
-		Params        *ResultGroupPeriod
-		Results       []*ResultGroupResult
-	}
-	ResultGroupPeriod int32
-	ResultGroupResult struct {
-		Params *ResultGroupResultTeam
-		Value  int32
-	}
-	ResultGroupResultTeam int32
 
-	OutcomeSettlement       OutcomeSettlementStatus
 	OutcomeSettlementStatus int32 // constants
+
+
 )
 
 func NewSportDescription(sportDescription pb.SportDescription) *SportDescription {
@@ -173,8 +174,8 @@ func NewEvent(feedEvent pb.FeedEvent) (*Event, error) {
 	}
 
 	return &Event{
-		EventId:      feedEvent.GetEventId(),
-		SportId:      feedEvent.GetSportId(),
+		EventID:      feedEvent.GetEventId(),
+		SportID:      feedEvent.GetSportId(),
 		Category:     feedEvent.GetCategory(),
 		League:       feedEvent.GetLeague(),
 		Status:       NewEventStatus(feedEvent.GetStatus()),
@@ -274,4 +275,18 @@ func NewMarketParamType(marketParamType pb.FeedMarketParam_MarketParamType) Mark
 	default:
 		return MarketParamTypeUnknown
 	}
+}
+
+func NewEventSettlement(settlement pb.EventSettlement)(*EventSettlement){
+	eventSettlement := &EventSettlement{
+		EventID: settlement.GetEventId(),
+		Resulting: settlement.GetResulting(),
+	}
+
+
+
+}
+
+func NewResulting(resulting pb.EventPoints) (*Resulting) {
+
 }

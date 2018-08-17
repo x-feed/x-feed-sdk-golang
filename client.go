@@ -1,4 +1,4 @@
-package xa
+package xfeed
 
 import (
 	"context"
