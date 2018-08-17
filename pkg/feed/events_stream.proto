@@ -3,6 +3,8 @@ syntax = "proto3";
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
 
+import "feed/event_points.proto";
+
 package feed;
 
 
@@ -12,7 +14,7 @@ message StreamEventsRequest {
 
 message StreamEventsResponse {
     oneof data {
-        DiffsMessage events_message = 1;
+        DiffsMessage diffs_message = 1;
         EventsRecoveryComplete recovery_complete = 2;
     }
     google.protobuf.Timestamp generated_ts = 3;
@@ -66,8 +68,10 @@ message FeedEvent {
     EventStatus status = 5;
     google.protobuf.Timestamp start_ts = 6;
     repeated string participants = 7;
-    EventTimer timer = 8;  // only live
-    // TODO: statistics
+
+    // only live
+    EventTimer timer = 8;
+    EventPoints statistics = 9;
 }
 
 message FeedOutcome {
@@ -81,7 +85,7 @@ message FeedOutcome {
 
 message MarketsDiff {
     string event_id = 1;
-    repeated SingleMarketDiff markets_diffs = 2;
+    repeated SingleMarketDiff event_markets_diffs = 2;
 }
 
 message SingleMarketDiff {

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
+import "feed/event_points.proto";
+
 package feed;
 
 
@@ -27,28 +29,8 @@ message MultipleEventsSettlement {
 
 message EventSettlement {
     string event_id = 1;
-    FeedResulting resulting = 2;
+    EventPoints resulting = 2;
     map<string,  OutcomeSettlement> outcomes = 3; // key is outcome_id
-}
-
-message FeedResulting {
-    message ResultGroup {
-        message ResultGroupParams {
-            int32 period = 1;
-        }
-        message Result {
-            message ResultParams {
-                int32 team = 1;
-            }
-            ResultParams params = 1;
-            int32 value = 2;
-        }
-
-        int32 result_group_id = 1; //  resulting type: score, corners, etc.
-        ResultGroupParams params = 2;
-        repeated Result results = 3;
-    }
-    repeated ResultGroup result_groups = 1;
 }
 
 message OutcomeSettlement{
