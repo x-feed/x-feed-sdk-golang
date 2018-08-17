@@ -1,10 +1,11 @@
 package xa
 
 import (
+	"time"
+
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
 	pb "github.com/x-feed/x-feed-sdk-golang/pkg/feed"
-	"time"
 )
 
 // sport description DTOs
@@ -45,6 +46,7 @@ type (
 		Participants []string
 		Timer        *EventTimer
 	}
+
 	EventStatus int32 // just consts
 
 	EventTimer struct {
@@ -52,6 +54,7 @@ type (
 		Time    *time.Duration
 		State   TimerState
 	}
+
 	TimerState int32 // constants
 )
 
@@ -71,22 +74,33 @@ const (
 // market DTOs
 type (
 	Market struct {
-		MarketId     string
+		MarketID     string
 		MarketType   int32
 		MarketParams []*MarketParam
 		Outcomes     []*Outcome
 	}
+
 	MarketParam struct {
 		Type  MarketParamType
 		Value string
 	}
+
 	MarketParamType int32 // constants
-	Outcome         struct {
-		OutcomeId   string
+
+	Outcome struct {
+		OutcomeID   string
 		OutcomeType int32
 		Value       string
 		Suspended   bool
 	}
+)
+
+const (
+	MarketParamTypeUnknown  MarketParamType = 0
+	MarketParamTypePeriod   MarketParamType = 1
+	MarketParamTypeTotal    MarketParamType = 2
+	MarketParamTypeHandicap MarketParamType = 3
+	MarketParamTypeTeam     MarketParamType = 4
 )
 
 // settlement DTO
@@ -215,5 +229,49 @@ func NewTimerState(timerState pb.EventTimer_TimerState) TimerState {
 		fallthrough
 	default:
 		return TimerStateUnknown
+	}
+}
+
+func NewMarket(feedMarket *pb.FeedMarket) *Market {
+	market := &Market{
+		MarketID:   feedMarket.GetMarketId(),
+		MarketType: feedMarket.GetMarketType(),
+	}
+
+	market.MarketParams = make([]*MarketParam, 0, len(feedMarket.GetMarketParams()))
+	for _, marketParam := range feedMarket.GetMarketParams() {
+		market.MarketParams = append(market.MarketParams, &MarketParam{
+			Type:  NewMarketParamType(marketParam.GetType()),
+			Value: marketParam.GetValue(),
+		})
+	}
+
+	market.Outcomes = make([]*Outcome, 0, len(feedMarket.GetOutcomes()))
+	for _, outcome := range feedMarket.GetOutcomes() {
+		market.Outcomes = append(market.Outcomes, &Outcome{
+			OutcomeID:   outcome.GetOutcomeId(),
+			OutcomeType: outcome.GetOutcomeType(),
+			Value:       outcome.GetValue(),
+			Suspended:   outcome.GetSuspended(),
+		})
+	}
+
+	return market
+}
+
+func NewMarketParamType(marketParamType pb.FeedMarketParam_MarketParamType) MarketParamType {
+	switch marketParamType {
+	case pb.FeedMarketParam_TEAM:
+		return MarketParamTypeTeam
+	case pb.FeedMarketParam_HANDICAP:
+		return MarketParamTypeHandicap
+	case pb.FeedMarketParam_TOTAL:
+		return MarketParamTypeTotal
+	case pb.FeedMarketParam_PERIOD:
+		return MarketParamTypePeriod
+	case pb.FeedMarketParam_unknown:
+		fallthrough
+	default:
+		return MarketParamTypeUnknown
 	}
 }
