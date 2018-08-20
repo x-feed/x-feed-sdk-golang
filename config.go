@@ -17,7 +17,7 @@ type Config struct {
 	RequestRateLimit        float64
 	RequestRateLimitBurst   int
 	EntitiesRefreshInterval time.Duration
-	MaxMessagePayloadSize   int
+	MaxMessageSize          int
 
 	// After a duration of this time if the client doesn't see any activity it pings the server to see if the transport is still alive.
 	// it is better to set it no more than 1 sec?
