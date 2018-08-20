@@ -64,13 +64,12 @@ const (
 
 // Event DTOs
 type (
-
 	FeedAction int32
 
 	EventEnvelope struct {
-		EventDiff *Event
+		EventDiff   *Event
 		GeneratedAt *time.Time
-		Action FeedAction
+		Action      FeedAction
 	}
 
 	Event struct {
@@ -97,10 +96,10 @@ type (
 )
 
 const (
-	Unknown FeedAction = 0;
-	Insert  FeedAction = 1;
-	Delete  FeedAction = 2;
-	Update  FeedAction = 3;
+	Unknown FeedAction = 0
+	Insert  FeedAction = 1
+	Delete  FeedAction = 2
+	Update  FeedAction = 3
 )
 
 const (
@@ -118,12 +117,11 @@ const (
 
 // market DTOs
 type (
-
 	MarketEnvelope struct {
-		EventID string
-		MarketDiff *Market
+		EventID     string
+		MarketDiff  *Market
 		GeneratedAt *time.Time
-		Action FeedAction
+		Action      FeedAction
 	}
 
 	Market struct {
@@ -158,6 +156,11 @@ const (
 
 // settlement DTO
 type (
+	EventSettlementEnvelope struct {
+		EventSettlement *EventSettlement
+		GeneratedAt     *time.Time
+	}
+
 	EventSettlement struct {
 		EventID   string
 		Resulting *EventPoints
@@ -337,7 +340,7 @@ func NewMarketParamType(marketParamType pb.FeedMarketParam_MarketParamType) Mark
 	}
 }
 
-func NewEventSettlement(settlement pb.EventSettlement) *EventSettlement {
+func NewEventSettlement(settlement *pb.EventSettlement) *EventSettlement {
 	eventSettlement := &EventSettlement{
 		EventID:   settlement.GetEventId(),
 		Resulting: NewEventPoints(settlement.GetResulting()),
@@ -429,7 +432,7 @@ func NewOutcomeSettlementStatus(status pb.OutcomeSettlement_SettlementType) Outc
 	}
 }
 
-func NewFeedAction(action pb.DiffType) (FeedAction) {
+func NewFeedAction(action pb.DiffType) FeedAction {
 	switch action {
 	case pb.DiffType_UPDATE:
 		return Update

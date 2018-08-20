@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/golang/protobuf/ptypes"
+	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 	pb "github.com/x-feed/x-feed-sdk-golang/pkg/feed"
 	"github.com/x-feed/x-feed-sdk-golang/pkg/logger"
@@ -13,17 +14,18 @@ import (
 )
 
 type Session struct {
-	lg logger.LogEntry
+	lg             logger.LogEntry
 	requestTimeout time.Duration
 
-	m sync.Mutex
-	limiter        *rate.Limiter
-	client         pb.FeedClient
-	eventsStream chan *EventEnvelope
-	marketsStream chan *MarketEnvelope
+	m                sync.Mutex
+	limiter          *rate.Limiter
+	client           pb.FeedClient
+	eventsStream     chan *EventEnvelope
+	marketsStream    chan *MarketEnvelope
+	eventSettlements chan *EventSettlementEnvelope
 }
 
-func (s *Session) EventsFeed(clientName string) (chan *EventEnvelope, chan *MarketEnvelope,  error) {
+func (s *Session) EventsFeed(clientName string) (chan *EventEnvelope, chan *MarketEnvelope, error) {
 	s.m.Lock()
 	s.m.Unlock()
 
@@ -34,8 +36,6 @@ func (s *Session) EventsFeed(clientName string) (chan *EventEnvelope, chan *Mark
 	eventRequest := &pb.StreamEventsRequest{
 		ClientName: clientName,
 	}
-	s.eventsStream = make(chan *EventEnvelope)
-	s.marketsStream = make(chan *MarketEnvelope)
 
 	err := s.limiter.Wait(context.Background())
 	if err != nil {
@@ -48,6 +48,9 @@ func (s *Session) EventsFeed(clientName string) (chan *EventEnvelope, chan *Mark
 		cancel()
 		return nil, nil, err
 	}
+
+	s.eventsStream = make(chan *EventEnvelope)
+	s.marketsStream = make(chan *MarketEnvelope)
 
 	go func(cancelFunc context.CancelFunc) {
 		defer cancelFunc()
@@ -69,17 +72,23 @@ func (s *Session) EventsFeed(clientName string) (chan *EventEnvelope, chan *Mark
 	return s.eventsStream, s.marketsStream, nil
 }
 
-func (s *Session) SettlementsFeed(clientName string, lastConsumed time.Time) (chan *pb.SettlementResponse, error) {
+func (s *Session) SettlementsFeed(clientName string, lastConsumed time.Time) (chan *EventSettlementEnvelope, error) {
+	s.m.Lock()
+	s.m.Unlock()
+
+	if s.eventSettlements != nil {
+		return s.eventSettlements, nil
+	}
+
 	lConsumed, err := ptypes.TimestampProto(lastConsumed)
 	if err != nil {
 		return nil, errors.Wrapf(err, "timestamp %v is invalid time", lastConsumed)
 	}
 
-	settlementRequest := &pb.SettlementRequest{
+	settlementRequest := &pb.StreamSettlementsRequest{
 		ClientName:            clientName,
 		LastConsumedTimestamp: lConsumed,
 	}
-	result := make(chan *pb.SettlementResponse)
 
 	err = s.limiter.Wait(context.Background())
 	if err != nil {
@@ -87,26 +96,43 @@ func (s *Session) SettlementsFeed(clientName string, lastConsumed time.Time) (ch
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), s.requestTimeout)
-	settlementResponseStream, err := s.client.SettlementFeed(ctx, settlementRequest)
+	settlementResponseStream, err := s.client.StreamSettlements(ctx, settlementRequest)
 	if err != nil {
 		cancel()
 		return nil, err
 	}
+
+	s.eventSettlements = make(chan *EventSettlementEnvelope)
 
 	go func(cancelFunc context.CancelFunc) {
 		defer cancelFunc()
 		for {
 			settlementResponse, err := settlementResponseStream.Recv()
 			if err != nil {
-				s.log.Errorf("Can't get settlementResponse %v", err)
-				close(result)
+				s.lg.Errorf("Can't get settlementResponse %v", err)
+				close(s.eventSettlements)
+				s.eventSettlements = nil
 				return
 			}
-			result <- settlementResponse
+
+			generatedTs, err := parseTimestamp(settlementResponse.GetDiffTimestamp())
+			if err != nil {
+				generatedTs = time.Now()
+			}
+
+			if eventSettlements := settlementResponse.GetMultipleEventsSettlement(); eventSettlements == nil {
+				continue
+			}
+			for _, eventSettlement := range settlementResponse.GetMultipleEventsSettlement().GetEventSettlement() {
+				s.eventSettlements <- &EventSettlementEnvelope{
+					EventSettlement: NewEventSettlement(eventSettlement),
+					GeneratedAt:     &generatedTs,
+				}
+			}
 		}
 	}(cancel)
 
-	return result, nil
+	return s.eventSettlements, nil
 }
 
 func (s *Session) Entities(language string) ([]*pb.SportEntities, error) {
@@ -136,16 +162,8 @@ func (s *Session) Entities(language string) ([]*pb.SportEntities, error) {
 
 func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 	if diff := eventsResponse.GetDiffsMessage(); diff != nil {
-		var generatedTs time.Time
-		var err error
-		if genTs := eventsResponse.GetGeneratedTs(); genTs != nil {
-			generatedTs, err = ptypes.Timestamp(genTs)
-			if err != nil {
-				s.lg.Errorf("can't parse x-feed GeneratedTs timestamp: %v, err: %v", genTs, err)
-			}
-		}
-		if generatedTs.IsZero() {
-			s.lg.Errorf("generatedTs timestamp: %v is zero", generatedTs)
+		generatedTs, err := parseTimestamp(eventsResponse.GetGeneratedTs())
+		if err != nil {
 			generatedTs = time.Now()
 		}
 
@@ -165,9 +183,9 @@ func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 				}
 
 				s.eventsStream <- &EventEnvelope{
-					EventDiff: e,
+					EventDiff:   e,
 					GeneratedAt: &generatedTs,
-					Action: NewFeedAction(eventDiff.GetDiffType()),
+					Action:      NewFeedAction(eventDiff.GetDiffType()),
 				}
 			}
 			wg.Done()
@@ -182,10 +200,10 @@ func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 					market := NewMarket(marketDiff.GetMarket())
 
 					s.marketsStream <- &MarketEnvelope{
-						EventID: marketsDiffs.GetEventId(),
-						MarketDiff: market,
+						EventID:     marketsDiffs.GetEventId(),
+						MarketDiff:  market,
 						GeneratedAt: &generatedTs,
-						Action: NewFeedAction(marketDiff.GetDiffType()),
+						Action:      NewFeedAction(marketDiff.GetDiffType()),
 					}
 				}
 			}
@@ -194,4 +212,19 @@ func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 
 		wg.Wait()
 	}
+}
+
+func parseTimestamp(genTs *timestamp.Timestamp) (time.Time, error) {
+	var generatedTs time.Time
+	var err error
+	if genTs != nil {
+		generatedTs, err = ptypes.Timestamp(genTs)
+		if err != nil {
+			return generatedTs, errors.Errorf("can't parse x-feed GeneratedTs timestamp: %v, err: %v", genTs, err)
+		}
+	}
+	if generatedTs.IsZero() {
+		return generatedTs, errors.Errorf("generatedTs timestamp: %v is zero", generatedTs)
+	}
+	return generatedTs, nil
 }
