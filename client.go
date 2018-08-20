@@ -23,7 +23,7 @@ type Client struct {
 
 	m         sync.Mutex
 	connected bool
-	session   *session
+	session   *Session
 }
 
 func NewClient(cfg Config) (*Client, error) {
