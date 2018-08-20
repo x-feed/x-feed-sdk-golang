@@ -178,7 +178,7 @@ const (
 	OutcomeSettlementReturn    OutcomeSettlementStatus = 4
 )
 
-func NewSportDescription(sportDescription pb.SportDescription) *SportDescription {
+func NewSportDescription(sportDescription *pb.SportDescription) *SportDescription {
 	result := &SportDescription{
 		SportID:   sportDescription.GetSportId(),
 		SportName: sportDescription.GetSportName(),
