@@ -2,6 +2,7 @@ package xfeed
 
 import (
 	"context"
+
 	"github.com/pkg/errors"
 	pb "github.com/x-feed/x-feed-sdk-golang/pkg/feed"
 	"github.com/x-feed/x-feed-sdk-golang/pkg/logger"
