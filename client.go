@@ -6,6 +6,7 @@ import (
 	"github.com/x-feed/x-feed-sdk-golang/pkg/logger"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
+	"sync"
 )
 
 type Client struct {
@@ -18,7 +19,11 @@ type Client struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	lg *logger.LogEntry
+	lg logger.LogEntry
+
+	m         sync.Mutex
+	connected bool
+	session   *session
 }
 
 func NewClient(cfg Config) (*Client, error) {

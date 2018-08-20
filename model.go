@@ -64,6 +64,15 @@ const (
 
 // Event DTOs
 type (
+
+	FeedAction int32
+
+	EventEnvelope struct {
+		EventDiff *Event
+		GeneratedAt *time.Time
+		Action FeedAction
+	}
+
 	Event struct {
 		EventID      string
 		SportID      int32
@@ -88,6 +97,13 @@ type (
 )
 
 const (
+	Unknown FeedAction = 0;
+	Insert  FeedAction = 1;
+	Delete  FeedAction = 2;
+	Update  FeedAction = 3;
+)
+
+const (
 	EventStatusUnknown  EventStatus = 0
 	EventStatusPrematch EventStatus = 1
 	EventStatusLive     EventStatus = 2
@@ -102,6 +118,14 @@ const (
 
 // market DTOs
 type (
+
+	MarketEnvelope struct {
+		EventID string
+		MarketDiff *Market
+		GeneratedAt *time.Time
+		Action FeedAction
+	}
+
 	Market struct {
 		MarketID     string
 		MarketType   int32
@@ -192,7 +216,7 @@ func NewSportDescription(sportDescription pb.SportDescription) *SportDescription
 	return result
 }
 
-func NewEvent(feedEvent pb.FeedEvent) (*Event, error) {
+func NewEvent(feedEvent *pb.FeedEvent) (*Event, error) {
 	startTs, err := ptypes.Timestamp(feedEvent.GetStartTs())
 	if err != nil {
 		return nil, errors.Wrap(err, "can't parse Event StartTs")
@@ -402,5 +426,20 @@ func NewOutcomeSettlementStatus(status pb.OutcomeSettlement_SettlementType) Outc
 		fallthrough
 	default:
 		return OutcomeSettlementUnknown
+	}
+}
+
+func NewFeedAction(action pb.DiffType) (FeedAction) {
+	switch action {
+	case pb.DiffType_UPDATE:
+		return Update
+	case pb.DiffType_DELETE:
+		return Delete
+	case pb.DiffType_INSERT:
+		return Insert
+	case pb.DiffType_unknown:
+		fallthrough
+	default:
+		return Unknown
 	}
 }
