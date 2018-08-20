@@ -3,13 +3,11 @@ package xfeed
 import (
 	"context"
 
-	"fmt"
 	"github.com/pkg/errors"
 	"github.com/x-feed/x-feed-sdk-golang/pkg/logger"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
-	"time"
 )
 
 type Client struct {
@@ -70,7 +68,7 @@ func NewClient(cfg Config, logger logger.LogEntry) (*Client, error) {
 	client.session = &Session{
 		clientConn:     client.conn,
 		requestTimeout: cfg.RequestDeadline,
-		Lg:             logger.WithField("session", fmt.Sprintf("%s, cretaion time %v", cfg.ServerURI, time.Now())),
+		Lg:             client.Lg,
 		limiter:        rate.NewLimiter(rate.Limit(cfg.RequestRateLimit), cfg.RequestRateLimitBurst),
 	}
 

@@ -1,7 +1,5 @@
 package logger
 
-type Fields map[string]interface{}
-
 type LogEntry interface {
 	Debug(v ...interface{})
 	Debugf(format string, v ...interface{})
@@ -21,7 +19,4 @@ type LogEntry interface {
 	Panic(v ...interface{})
 	Panicf(format string, v ...interface{})
 	Panicln(v ...interface{})
-	WithField(key string, value interface{}) LogEntry
-	WithFields(Fields) LogEntry
-	WithError(err error) LogEntry
 }
