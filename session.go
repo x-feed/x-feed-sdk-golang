@@ -11,23 +11,29 @@ import (
 	pb "github.com/x-feed/x-feed-sdk-golang/pkg/feed"
 	"github.com/x-feed/x-feed-sdk-golang/pkg/logger"
 	"golang.org/x/time/rate"
+	"google.golang.org/grpc"
 )
 
 type Session struct {
 	Lg             logger.LogEntry
 	requestTimeout time.Duration
 
-	m                sync.Mutex
-	limiter          *rate.Limiter
-	client           pb.FeedClient
-	eventsStream     chan *EventEnvelope
-	marketsStream    chan *MarketEnvelope
-	eventSettlements chan *EventSettlementEnvelope
+	limiter    *rate.Limiter
+	clientConn *grpc.ClientConn
+
+	eventsFeedMutex sync.Mutex
+	eventsStream    chan *EventEnvelope
+	marketsStream   chan *MarketEnvelope
+
+	eventSettlementsMutex sync.Mutex
+	eventSettlements      chan *EventSettlementEnvelope
+
+	entitiesMutex sync.Mutex
 }
 
 func (s *Session) EventsFeed(clientName string) (chan *EventEnvelope, chan *MarketEnvelope, error) {
-	s.m.Lock()
-	s.m.Unlock()
+	s.eventsFeedMutex.Lock()
+	s.eventsFeedMutex.Unlock()
 
 	if s.eventsStream != nil && s.marketsStream != nil {
 		return s.eventsStream, s.marketsStream, nil
@@ -44,7 +50,7 @@ func (s *Session) EventsFeed(clientName string) (chan *EventEnvelope, chan *Mark
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), s.requestTimeout)
-	eventResponseStream, err := s.client.StreamEvents(ctx, eventRequest)
+	eventResponseStream, err := pb.NewFeedClient(s.clientConn).StreamEvents(ctx, eventRequest)
 	if err != nil {
 		cancel()
 
@@ -76,8 +82,8 @@ func (s *Session) EventsFeed(clientName string) (chan *EventEnvelope, chan *Mark
 }
 
 func (s *Session) SettlementsFeed(clientName string, lastConsumed time.Time) (chan *EventSettlementEnvelope, error) {
-	s.m.Lock()
-	s.m.Unlock()
+	s.eventSettlementsMutex.Lock()
+	s.eventSettlementsMutex.Unlock()
 
 	if s.eventSettlements != nil {
 		return s.eventSettlements, nil
@@ -101,7 +107,7 @@ func (s *Session) SettlementsFeed(clientName string, lastConsumed time.Time) (ch
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), s.requestTimeout)
-	settlementResponseStream, err := s.client.StreamSettlements(ctx, settlementRequest)
+	settlementResponseStream, err := pb.NewFeedClient(s.clientConn).StreamSettlements(ctx, settlementRequest)
 	if err != nil {
 		cancel()
 
@@ -144,6 +150,8 @@ func (s *Session) SettlementsFeed(clientName string, lastConsumed time.Time) (ch
 }
 
 func (s *Session) Entities(language string) ([]*SportDescription, error) {
+	s.entitiesMutex.Lock()
+	defer s.entitiesMutex.Unlock()
 	ctx, cancel := context.WithTimeout(context.Background(), s.requestTimeout)
 	defer cancel()
 
@@ -157,7 +165,7 @@ func (s *Session) Entities(language string) ([]*SportDescription, error) {
 		return nil, err
 	}
 
-	entities, err := s.client.GetSportDescriptions(ctx, in)
+	entities, err := pb.NewFeedClient(s.clientConn).GetSportDescriptions(ctx, in)
 	if err != nil {
 
 		return nil, errors.Wrap(err, "can't get SportEntities")

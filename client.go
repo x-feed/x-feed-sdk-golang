@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	pb "github.com/x-feed/x-feed-sdk-golang/pkg/feed"
 	"github.com/x-feed/x-feed-sdk-golang/pkg/logger"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
@@ -58,8 +57,6 @@ func NewClient(cfg Config, logger logger.LogEntry) (*Client, error) {
 
 	client.Lg.Debugf("connection successful to host %s", cfg.ServerURI)
 
-	xFeedClient := pb.NewFeedClient(client.conn)
-
 	go func() {
 		<-client.ctx.Done()
 		err := client.conn.Close()
@@ -69,7 +66,7 @@ func NewClient(cfg Config, logger logger.LogEntry) (*Client, error) {
 	}()
 
 	client.session = &Session{
-		client:         xFeedClient,
+		clientConn:     client.conn,
 		requestTimeout: cfg.RequestDeadline,
 		Lg:             logger,
 		limiter:        rate.NewLimiter(rate.Limit(cfg.RequestRateLimit), cfg.RequestRateLimitBurst),
