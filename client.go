@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/pkg/errors"
-	"github.com/x-feed/x-feed-sdk-golang/pkg/logger"
+	"github.com/x-feed/x-feed-sdk-golang/pkg/logging"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/keepalive"
@@ -19,12 +19,12 @@ type Client struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	lg logger.LogEntry
+	lg logging.Logger
 
 	session *Session
 }
 
-func NewClient(cfg Config, logger logger.LogEntry) (*Client, error) {
+func NewClient(cfg Config, logger logging.Logger) (*Client, error) {
 
 	client := &Client{
 		cfg: cfg,

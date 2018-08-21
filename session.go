@@ -9,13 +9,13 @@ import (
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
 	pb "github.com/x-feed/x-feed-sdk-golang/pkg/feed"
-	"github.com/x-feed/x-feed-sdk-golang/pkg/logger"
+	"github.com/x-feed/x-feed-sdk-golang/pkg/logging"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 )
 
 type Session struct {
-	lg             logger.LogEntry
+	lg             logging.Logger
 	requestTimeout time.Duration
 	clientID       string
 

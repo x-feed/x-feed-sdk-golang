@@ -1,6 +1,6 @@
-package logger
+package logging
 
-type LogEntry interface {
+type Logger interface {
 	Debug(v ...interface{})
 	Debugf(format string, v ...interface{})
 	Debugln(v ...interface{})

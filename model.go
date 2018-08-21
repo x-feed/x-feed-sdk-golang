@@ -11,30 +11,28 @@ import (
 // sport description DTOs
 type (
 	SportDescription struct {
-		SportID     int32
-		SportName   string
+		ID          int32
+		Name        string
 		Periods     []*Period
 		MarketTypes []*MarketType
 	}
 
 	Period struct {
-		PeriodID   int32
-		PeriodName string
+		ID   int32
+		Name string
 	}
 
 	MarketType struct {
-		MarketTypeID       int32
-		MarketNameTemplate string
-		OutcomeTypes       []*OutcomeType
+		ID           int32
+		NameTemplate string
+		OutcomeTypes []*OutcomeType
 	}
 
 	OutcomeType struct {
-		OutcomeTypeID       int32
-		OutcomeNameTemplate string
+		ID           int32
+		NameTemplate string
 	}
-)
 
-type (
 	EventPoints struct {
 		PointGroups []*PointsGroup
 	}
@@ -73,7 +71,7 @@ type (
 	}
 
 	Event struct {
-		EventID      string
+		ID           string
 		SportID      int32
 		Category     string
 		League       string
@@ -125,8 +123,8 @@ type (
 	}
 
 	Market struct {
-		MarketID     string
-		MarketType   int32
+		ID           string
+		MarketTypeID int32
 		MarketParams []*MarketParam
 		Outcomes     []*Outcome
 	}
@@ -139,10 +137,10 @@ type (
 	MarketParamType int32
 
 	Outcome struct {
-		OutcomeID   string
-		OutcomeType int32
-		Value       string
-		Suspended   bool
+		ID        string
+		Type      int32
+		Value     string
+		Suspended bool
 	}
 )
 
@@ -180,8 +178,8 @@ const (
 
 func newSportDescription(sportDescription *pb.SportDescription) *SportDescription {
 	result := &SportDescription{
-		SportID:   sportDescription.GetSportId(),
-		SportName: sportDescription.GetSportName(),
+		ID:   sportDescription.GetSportId(),
+		Name: sportDescription.GetSportName(),
 	}
 
 	result.Periods = make([]*Period, 0, len(sportDescription.GetPeriods()))
@@ -190,8 +188,8 @@ func newSportDescription(sportDescription *pb.SportDescription) *SportDescriptio
 			continue
 		}
 		result.Periods = append(result.Periods, &Period{
-			PeriodID:   period.GetPeriodId(),
-			PeriodName: period.GetPeriodName(),
+			ID:   period.GetPeriodId(),
+			Name: period.GetPeriodName(),
 		})
 	}
 
@@ -201,8 +199,8 @@ func newSportDescription(sportDescription *pb.SportDescription) *SportDescriptio
 			continue
 		}
 		mt := &MarketType{
-			MarketTypeID:       marketType.GetMarketTypeId(),
-			MarketNameTemplate: marketType.GetMarketNameTemplate(),
+			ID:           marketType.GetMarketTypeId(),
+			NameTemplate: marketType.GetMarketNameTemplate(),
 		}
 		mt.OutcomeTypes = make([]*OutcomeType, 0, len(marketType.GetOutcomeTypes()))
 		for _, outcomeType := range marketType.GetOutcomeTypes() {
@@ -210,8 +208,8 @@ func newSportDescription(sportDescription *pb.SportDescription) *SportDescriptio
 				continue
 			}
 			mt.OutcomeTypes = append(mt.OutcomeTypes, &OutcomeType{
-				OutcomeTypeID:       outcomeType.GetOutcomeTypeId(),
-				OutcomeNameTemplate: outcomeType.GetOutcomeNameTemplate(),
+				ID:           outcomeType.GetOutcomeTypeId(),
+				NameTemplate: outcomeType.GetOutcomeNameTemplate(),
 			})
 		}
 	}
@@ -231,7 +229,7 @@ func newEvent(feedEvent *pb.FeedEvent) (*Event, error) {
 	}
 
 	return &Event{
-		EventID:      feedEvent.GetEventId(),
+		ID:           feedEvent.GetEventId(),
 		SportID:      feedEvent.GetSportId(),
 		Category:     feedEvent.GetCategory(),
 		League:       feedEvent.GetLeague(),
@@ -248,8 +246,6 @@ func newEventStatus(eventStatus pb.FeedEvent_EventStatus) EventStatus {
 		return EventStatusLive
 	case pb.FeedEvent_PREMATCH:
 		return EventStatusPrematch
-	case pb.FeedEvent_unknown:
-		fallthrough
 	default:
 		return EventStatusUnknown
 	}
@@ -283,8 +279,6 @@ func newTimerState(timerState pb.EventTimer_TimerState) TimerState {
 		return TimerStateBackward
 	case pb.EventTimer_PAUSE:
 		return TimerStatePause
-	case pb.EventTimer_unknown:
-		fallthrough
 	default:
 		return TimerStateUnknown
 	}
@@ -292,8 +286,8 @@ func newTimerState(timerState pb.EventTimer_TimerState) TimerState {
 
 func newMarket(feedMarket *pb.FeedMarket) *Market {
 	market := &Market{
-		MarketID:   feedMarket.GetMarketId(),
-		MarketType: feedMarket.GetMarketType(),
+		ID:           feedMarket.GetMarketId(),
+		MarketTypeID: feedMarket.GetMarketType(),
 	}
 
 	market.MarketParams = make([]*MarketParam, 0, len(feedMarket.GetMarketParams()))
@@ -313,10 +307,10 @@ func newMarket(feedMarket *pb.FeedMarket) *Market {
 			continue
 		}
 		market.Outcomes = append(market.Outcomes, &Outcome{
-			OutcomeID:   outcome.GetOutcomeId(),
-			OutcomeType: outcome.GetOutcomeType(),
-			Value:       outcome.GetValue(),
-			Suspended:   outcome.GetSuspended(),
+			ID:        outcome.GetOutcomeId(),
+			Type:      outcome.GetOutcomeType(),
+			Value:     outcome.GetValue(),
+			Suspended: outcome.GetSuspended(),
 		})
 	}
 
@@ -333,8 +327,6 @@ func newMarketParamType(marketParamType pb.FeedMarketParam_MarketParamType) Mark
 		return MarketParamTypeTotal
 	case pb.FeedMarketParam_PERIOD:
 		return MarketParamTypePeriod
-	case pb.FeedMarketParam_unknown:
-		fallthrough
 	default:
 		return MarketParamTypeUnknown
 	}
@@ -408,8 +400,6 @@ func newPointType(pointType pb.PointsGroup_PointType) PointType {
 		return PointTypePenalties
 	case pb.PointsGroup_CORNERS:
 		return PointTypeCorners
-	case pb.PointsGroup_unknown:
-		fallthrough
 	default:
 		return PointTypeUnknown
 	}
@@ -425,8 +415,6 @@ func newOutcomeSettlementStatus(status pb.OutcomeSettlement_SettlementType) Outc
 		return OutcomeSettlementWin
 	case pb.OutcomeSettlement_UNSETTLED:
 		return OutcomeSettlementUnsettled
-	case pb.OutcomeSettlement_unknown:
-		fallthrough
 	default:
 		return OutcomeSettlementUnknown
 	}
@@ -440,8 +428,6 @@ func newFeedAction(action pb.DiffType) FeedAction {
 		return Delete
 	case pb.DiffType_INSERT:
 		return Insert
-	case pb.DiffType_unknown:
-		fallthrough
 	default:
 		return Unknown
 	}
