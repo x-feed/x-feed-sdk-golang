@@ -140,7 +140,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 			}
 			for _, eventSettlement := range settlementResponse.GetMultipleEventsSettlement().GetEventSettlement() {
 				s.eventSettlements <- &EventSettlementEnvelope{
-					EventSettlement: NewEventSettlement(eventSettlement),
+					EventSettlement: newEventSettlement(eventSettlement),
 					GeneratedAt:     &generatedTs,
 				}
 			}
@@ -174,7 +174,7 @@ func (s *Session) Entities(language string) ([]*SportDescription, error) {
 
 	result := make([]*SportDescription, 0, len(entities.GetSportDescriptions()))
 	for _, sportDescription := range entities.GetSportDescriptions() {
-		result = append(result, NewSportDescription(sportDescription))
+		result = append(result, newSportDescription(sportDescription))
 	}
 
 	return result, nil
@@ -197,7 +197,7 @@ func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 
 					continue
 				}
-				e, err := NewEvent(eventDiff.GetEvent())
+				e, err := newEvent(eventDiff.GetEvent())
 				if err != nil {
 					s.lg.Errorf("can't parse FeedEvent: %v", err)
 
@@ -207,7 +207,7 @@ func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 				s.eventsStream <- &EventEnvelope{
 					EventDiff:   e,
 					GeneratedAt: &generatedTs,
-					Action:      NewFeedAction(eventDiff.GetDiffType()),
+					Action:      newFeedAction(eventDiff.GetDiffType()),
 				}
 			}
 			wg.Done()
@@ -220,13 +220,13 @@ func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 
 						continue
 					}
-					market := NewMarket(marketDiff.GetMarket())
+					market := newMarket(marketDiff.GetMarket())
 
 					s.marketsStream <- &MarketEnvelope{
 						EventID:     marketsDiffs.GetEventId(),
 						MarketDiff:  market,
 						GeneratedAt: &generatedTs,
-						Action:      NewFeedAction(marketDiff.GetDiffType()),
+						Action:      newFeedAction(marketDiff.GetDiffType()),
 					}
 				}
 			}

@@ -178,7 +178,7 @@ const (
 	OutcomeSettlementReturn    OutcomeSettlementStatus = 4
 )
 
-func NewSportDescription(sportDescription *pb.SportDescription) *SportDescription {
+func newSportDescription(sportDescription *pb.SportDescription) *SportDescription {
 	result := &SportDescription{
 		SportID:   sportDescription.GetSportId(),
 		SportName: sportDescription.GetSportName(),
@@ -219,13 +219,13 @@ func NewSportDescription(sportDescription *pb.SportDescription) *SportDescriptio
 	return result
 }
 
-func NewEvent(feedEvent *pb.FeedEvent) (*Event, error) {
+func newEvent(feedEvent *pb.FeedEvent) (*Event, error) {
 	startTs, err := ptypes.Timestamp(feedEvent.GetStartTs())
 	if err != nil {
 		return nil, errors.Wrap(err, "can't parse Event StartTs")
 	}
 
-	timer, err := NewEventTimer(feedEvent.GetTimer())
+	timer, err := newEventTimer(feedEvent.GetTimer())
 	if err != nil {
 		return nil, errors.Wrap(err, "can't parse Event Timer")
 	}
@@ -235,14 +235,14 @@ func NewEvent(feedEvent *pb.FeedEvent) (*Event, error) {
 		SportID:      feedEvent.GetSportId(),
 		Category:     feedEvent.GetCategory(),
 		League:       feedEvent.GetLeague(),
-		Status:       NewEventStatus(feedEvent.GetStatus()),
+		Status:       newEventStatus(feedEvent.GetStatus()),
 		Start:        &startTs,
 		Participants: feedEvent.GetParticipants(),
 		Timer:        timer,
 	}, nil
 }
 
-func NewEventStatus(eventStatus pb.FeedEvent_EventStatus) EventStatus {
+func newEventStatus(eventStatus pb.FeedEvent_EventStatus) EventStatus {
 	switch eventStatus {
 	case pb.FeedEvent_LIVE:
 		return EventStatusLive
@@ -255,7 +255,7 @@ func NewEventStatus(eventStatus pb.FeedEvent_EventStatus) EventStatus {
 	}
 }
 
-func NewEventTimer(eventTimer *pb.EventTimer) (*EventTimer, error) {
+func newEventTimer(eventTimer *pb.EventTimer) (*EventTimer, error) {
 	changedTs, err := ptypes.Timestamp(eventTimer.GetChangedTs())
 	if err != nil {
 		return nil, errors.Wrap(err, "can't parse EventTimer ChangedTs")
@@ -266,7 +266,7 @@ func NewEventTimer(eventTimer *pb.EventTimer) (*EventTimer, error) {
 		return nil, errors.Wrap(err, "can't parse EventTimer Time")
 	}
 
-	state := NewTimerState(eventTimer.GetState())
+	state := newTimerState(eventTimer.GetState())
 
 	return &EventTimer{
 		Changed: &changedTs,
@@ -275,7 +275,7 @@ func NewEventTimer(eventTimer *pb.EventTimer) (*EventTimer, error) {
 	}, nil
 }
 
-func NewTimerState(timerState pb.EventTimer_TimerState) TimerState {
+func newTimerState(timerState pb.EventTimer_TimerState) TimerState {
 	switch timerState {
 	case pb.EventTimer_FORWARD:
 		return TimerStateForward
@@ -290,7 +290,7 @@ func NewTimerState(timerState pb.EventTimer_TimerState) TimerState {
 	}
 }
 
-func NewMarket(feedMarket *pb.FeedMarket) *Market {
+func newMarket(feedMarket *pb.FeedMarket) *Market {
 	market := &Market{
 		MarketID:   feedMarket.GetMarketId(),
 		MarketType: feedMarket.GetMarketType(),
@@ -302,7 +302,7 @@ func NewMarket(feedMarket *pb.FeedMarket) *Market {
 			continue
 		}
 		market.MarketParams = append(market.MarketParams, &MarketParam{
-			Type:  NewMarketParamType(marketParam.GetType()),
+			Type:  newMarketParamType(marketParam.GetType()),
 			Value: marketParam.GetValue(),
 		})
 	}
@@ -323,7 +323,7 @@ func NewMarket(feedMarket *pb.FeedMarket) *Market {
 	return market
 }
 
-func NewMarketParamType(marketParamType pb.FeedMarketParam_MarketParamType) MarketParamType {
+func newMarketParamType(marketParamType pb.FeedMarketParam_MarketParamType) MarketParamType {
 	switch marketParamType {
 	case pb.FeedMarketParam_TEAM:
 		return MarketParamTypeTeam
@@ -340,10 +340,10 @@ func NewMarketParamType(marketParamType pb.FeedMarketParam_MarketParamType) Mark
 	}
 }
 
-func NewEventSettlement(settlement *pb.EventSettlement) *EventSettlement {
+func newEventSettlement(settlement *pb.EventSettlement) *EventSettlement {
 	eventSettlement := &EventSettlement{
 		EventID:   settlement.GetEventId(),
-		Resulting: NewEventPoints(settlement.GetResulting()),
+		Resulting: newEventPoints(settlement.GetResulting()),
 		Outcomes:  make(map[string]OutcomeSettlementStatus),
 	}
 	for outcomeID, settlementStatus := range settlement.GetOutcomes() {
@@ -352,13 +352,13 @@ func NewEventSettlement(settlement *pb.EventSettlement) *EventSettlement {
 			continue
 		}
 		status := settlementStatus.GetSettlement()
-		eventSettlement.Outcomes[outcomeID] = NewOutcomeSettlementStatus(status)
+		eventSettlement.Outcomes[outcomeID] = newOutcomeSettlementStatus(status)
 	}
 
 	return eventSettlement
 }
 
-func NewEventPoints(eventPoints *pb.EventPoints) *EventPoints {
+func newEventPoints(eventPoints *pb.EventPoints) *EventPoints {
 	if eventPoints == nil {
 		return nil
 	}
@@ -387,7 +387,7 @@ func NewEventPoints(eventPoints *pb.EventPoints) *EventPoints {
 		}
 
 		points.PointGroups = append(points.PointGroups, &PointsGroup{
-			PointType:     NewPointType(pointGroup.GetPointType()),
+			PointType:     newPointType(pointGroup.GetPointType()),
 			GroupPeriodID: periodID,
 			State:         states,
 		})
@@ -396,7 +396,7 @@ func NewEventPoints(eventPoints *pb.EventPoints) *EventPoints {
 	return points
 }
 
-func NewPointType(pointType pb.PointsGroup_PointType) PointType {
+func newPointType(pointType pb.PointsGroup_PointType) PointType {
 	switch pointType {
 	case pb.PointsGroup_SCORE:
 		return PointTypeScore
@@ -415,7 +415,7 @@ func NewPointType(pointType pb.PointsGroup_PointType) PointType {
 	}
 }
 
-func NewOutcomeSettlementStatus(status pb.OutcomeSettlement_SettlementType) OutcomeSettlementStatus {
+func newOutcomeSettlementStatus(status pb.OutcomeSettlement_SettlementType) OutcomeSettlementStatus {
 	switch status {
 	case pb.OutcomeSettlement_RETURN:
 		return OutcomeSettlementReturn
@@ -432,7 +432,7 @@ func NewOutcomeSettlementStatus(status pb.OutcomeSettlement_SettlementType) Outc
 	}
 }
 
-func NewFeedAction(action pb.DiffType) FeedAction {
+func newFeedAction(action pb.DiffType) FeedAction {
 	switch action {
 	case pb.DiffType_UPDATE:
 		return Update
