@@ -21,7 +21,7 @@ type Session struct {
 
 	limiter    *rate.Limiter
 	clientConn *grpc.ClientConn
-
+	// eventsFeedMutex, eventSettlementsMutex, entitiesMutex mutexes prevent concurrent invocation of specific API method.
 	eventsFeedMutex sync.Mutex
 	eventsStream    chan *EventEnvelope
 	marketsStream   chan *MarketEnvelope
