@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package feed;
+
+
+message SportDescriptionsRequest {
+    string lang = 1;  // "en"
+}
+
+message SportDescriptionsResponse {
+    repeated SportDescription sport_descriptions = 1;
+}
+
+message SportDescription {
+    int32 sport_id = 1;
+    string sport_name = 2;
+    repeated Period periods = 3;
+    repeated MarketType market_types = 4;
+}
+
+message Period {
+    int32 period_id = 1;
+    string period_name = 2;
+}
+
+// Templates of market names and outcome names uses market_params and event fields.
+// Variables:
+// "{%participant}" - get participant name by number in market_param "team" (1, 2)
+// "{$participantN}" - participant by predefined number.
+// "{+$handicap}", "{-$handicap}" - market_param "handicap"
+// "{$total}" - market_param "total"
+
+message MarketType {
+    int32 market_type_id = 1;
+
+    // event.participants = ["Dinamo", "Shakhtar"]
+    // market_params.team = 1
+    // Ex.: "{%participant} Total" -> "Dinamo Total"
+    string market_name_template = 2;
+    repeated OutcomeType outcome_types = 3;
+}
+
+message OutcomeType {
+    int32 outcome_type_id = 1;
+
+    // event.participants = ["Dinamo", "Shakhtar"]
+    // market_params.handicap = 1.5
+    // Ex.: "{$participant2} ({-$handicap})" -> "Shakhtar (-1.5)"
+    string outcome_name_template = 2;
+}

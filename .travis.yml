@@ -2,7 +2,7 @@ language: go
 
 go:
   - "1.10.x"
-  - master
+  - tip
 
 script:
   - go test -v -race ./...

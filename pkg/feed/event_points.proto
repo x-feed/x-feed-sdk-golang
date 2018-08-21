@@ -1,0 +1,36 @@
+syntax = "proto3";
+
+package feed;
+
+
+message GroupParams {
+    int32 period = 1;
+}
+
+message StateParams {
+    int32 participant = 1;
+}
+
+message State {
+    StateParams state_params = 1;
+    int32 value = 2;
+}
+
+message PointsGroup {
+    enum PointType {
+        unknown = 0;
+        SCORE = 1;
+        RED_CARDS = 2;
+        YELLOW_CARDS = 3;
+        PENALTIES = 4;
+        CORNERS = 5;
+    }
+
+    PointType point_type = 1;
+    GroupParams group_params = 2;
+    repeated State state = 3;
+}
+
+message EventPoints {
+    repeated PointsGroup point_groups = 1;
+}

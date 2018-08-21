@@ -1,0 +1,14 @@
+syntax = "proto3";
+
+import "feed/events_stream.proto";
+import "feed/settlement_stream.proto";
+import "feed/sport_descriptions.proto";
+
+package feed;
+
+
+service Feed {
+    rpc StreamEvents (StreamEventsRequest) returns (stream StreamEventsResponse) {}
+    rpc StreamSettlements (StreamSettlementsRequest) returns (stream StreamSettlementsResponse) {}
+    rpc GetSportDescriptions (SportDescriptionsRequest) returns (SportDescriptionsResponse) {}
+}
