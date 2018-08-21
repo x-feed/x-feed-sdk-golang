@@ -13,13 +13,13 @@ import (
 type Client struct {
 	conn *grpc.ClientConn
 
-	Cfg Config
+	cfg Config
 
 	// context and cancel func used to cancel all operations and gracefully stop client
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	Lg logger.LogEntry
+	lg logger.LogEntry
 
 	session *Session
 }
@@ -27,8 +27,8 @@ type Client struct {
 func NewClient(cfg Config, logger logger.LogEntry) (*Client, error) {
 
 	client := &Client{
-		Cfg: cfg,
-		Lg:  logger,
+		cfg: cfg,
+		lg:  logger,
 	}
 
 	keepaliveCfg := keepalive.ClientParameters{
@@ -55,26 +55,26 @@ func NewClient(cfg Config, logger logger.LogEntry) (*Client, error) {
 		return nil, errors.Errorf("grpc dial err: %v", err)
 	}
 
-	client.Lg.Debugf("connection successful to host %s", cfg.ServerURI)
+	client.lg.Debugf("connection successful to host %s", cfg.ServerURI)
 
 	go func() {
 		<-client.ctx.Done()
 		err := client.conn.Close()
 		if err != nil {
-			client.Lg.Errorf("connection close error %v", err)
+			client.lg.Errorf("connection close error %v", err)
 		}
 	}()
 
 	client.session = &Session{
 		clientConn:     client.conn,
 		requestTimeout: cfg.RequestDeadline,
-		Lg:             client.Lg,
+		lg:             client.lg,
 		limiter:        rate.NewLimiter(rate.Limit(cfg.RequestRateLimit), cfg.RequestRateLimitBurst),
 	}
 
 	return client, nil
 }
 
-func (c *Client) GetSession() *Session {
+func (c *Client) Session() *Session {
 	return c.session
 }

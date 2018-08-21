@@ -15,8 +15,9 @@ import (
 )
 
 type Session struct {
-	Lg             logger.LogEntry
+	lg             logger.LogEntry
 	requestTimeout time.Duration
+	clientID       string
 
 	limiter    *rate.Limiter
 	clientConn *grpc.ClientConn
@@ -31,16 +32,16 @@ type Session struct {
 	entitiesMutex sync.Mutex
 }
 
-func (s *Session) EventsFeed(clientName string) (chan *EventEnvelope, chan *MarketEnvelope, error) {
+func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error) {
 	s.eventsFeedMutex.Lock()
-	s.eventsFeedMutex.Unlock()
+	defer s.eventsFeedMutex.Unlock()
 
 	if s.eventsStream != nil && s.marketsStream != nil {
 		return s.eventsStream, s.marketsStream, nil
 	}
 
 	eventRequest := &pb.StreamEventsRequest{
-		ClientName: clientName,
+		ClientName: s.clientID,
 	}
 
 	err := s.limiter.Wait(context.Background())
@@ -65,7 +66,7 @@ func (s *Session) EventsFeed(clientName string) (chan *EventEnvelope, chan *Mark
 		for {
 			eventsResponse, err := eventResponseStream.Recv()
 			if err != nil {
-				s.Lg.Errorf("Can't get EventsResponse %v", err)
+				s.lg.Errorf("Can't get EventsResponse %v", err)
 				close(s.eventsStream)
 				close(s.marketsStream)
 				s.eventsStream = nil
@@ -81,9 +82,9 @@ func (s *Session) EventsFeed(clientName string) (chan *EventEnvelope, chan *Mark
 	return s.eventsStream, s.marketsStream, nil
 }
 
-func (s *Session) SettlementsFeed(clientName string, lastConsumed time.Time) (chan *EventSettlementEnvelope, error) {
+func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlementEnvelope, error) {
 	s.eventSettlementsMutex.Lock()
-	s.eventSettlementsMutex.Unlock()
+	defer s.eventSettlementsMutex.Unlock()
 
 	if s.eventSettlements != nil {
 		return s.eventSettlements, nil
@@ -96,7 +97,7 @@ func (s *Session) SettlementsFeed(clientName string, lastConsumed time.Time) (ch
 	}
 
 	settlementRequest := &pb.StreamSettlementsRequest{
-		ClientName:            clientName,
+		ClientName:            s.clientID,
 		LastConsumedTimestamp: lConsumed,
 	}
 
@@ -121,7 +122,7 @@ func (s *Session) SettlementsFeed(clientName string, lastConsumed time.Time) (ch
 		for {
 			settlementResponse, err := settlementResponseStream.Recv()
 			if err != nil {
-				s.Lg.Errorf("Can't get settlementResponse %v", err)
+				s.lg.Errorf("Can't get settlementResponse %v", err)
 				close(s.eventSettlements)
 				s.eventSettlements = nil
 
@@ -198,7 +199,7 @@ func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 				}
 				e, err := NewEvent(eventDiff.GetEvent())
 				if err != nil {
-					s.Lg.Errorf("can't parse FeedEvent: %v", err)
+					s.lg.Errorf("can't parse FeedEvent: %v", err)
 
 					continue
 				}
