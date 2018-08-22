@@ -78,7 +78,7 @@ func NewClient(cfg Config, logger logging.Logger) (*Client, error) {
 	return client, nil
 }
 
-// Session returns
+// Session returns instance of session in case where grpc connection is ready
 func (c *Client) Session() (*Session, error) {
 	if c.conn.GetState() == connectivity.Ready {
 		return c.session, nil

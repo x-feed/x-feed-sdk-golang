@@ -18,7 +18,7 @@ type (
 		MarketTypes []*MarketType
 	}
 
-	// Period represents Sport specific timespan of the game, e. g. full time, first haf, set, etc...
+	// Period represents Sport specific timespan of the game, e. g. full time, first half, set, etc.
 	Period struct {
 		ID   int32
 		Name string
@@ -60,7 +60,7 @@ type (
 		State         []*State
 	}
 
-	// PointType represents type of statistics unit: Score, RedСards, Corners, etc...
+	// PointType represents type of statistics unit: Score, Red cards, Corners, etc.
 	PointType int32
 
 	// State represents statistics entry for specific participant

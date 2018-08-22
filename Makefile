@@ -10,7 +10,7 @@ define LINT
 endef
 
 define GEN
-	@echo "Generationg go stubs from protobuf files"
+	@echo "Generating go stubs from protobuf files"
 	${CURRENT_DIR}/scripts/genproto.sh
 endef
 
