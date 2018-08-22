@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc"
 )
 
+// Session represents started and working session of x-feed.
 type Session struct {
 	lg             logging.Logger
 	requestTimeout time.Duration
@@ -32,6 +33,8 @@ type Session struct {
 	entitiesMutex sync.Mutex
 }
 
+// EventsFeed returns channels of state updates for Events and Markets.
+// when there is communication errors with X-feed servers it closes the channels
 func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error) {
 	s.eventsFeedMutex.Lock()
 	defer s.eventsFeedMutex.Unlock()
@@ -82,6 +85,8 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 	return s.eventsStream, s.marketsStream, nil
 }
 
+// SettlementsFeed returns channel of state updates for event settlements from specific point of time.
+// when there is communication errors with X-feed servers it closes the channels
 func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlementEnvelope, error) {
 	s.eventSettlementsMutex.Lock()
 	defer s.eventSettlementsMutex.Unlock()
@@ -150,6 +155,8 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 	return s.eventSettlements, nil
 }
 
+// Entities returns current snapshot of SportDescriptions.
+// when there is communication errors with X-feed servers error is returned
 func (s *Session) Entities(language string) ([]*SportDescription, error) {
 	s.entitiesMutex.Lock()
 	defer s.entitiesMutex.Unlock()
