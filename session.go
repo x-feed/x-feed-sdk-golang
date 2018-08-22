@@ -36,6 +36,9 @@ type Session struct {
 // EventsFeed returns channels of state updates for Events and Markets.
 // when there is communication errors with X-feed servers it closes the channels
 func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error) {
+	if s == nil {
+		return nil, nil, errors.New("Session is not initialised")
+	}
 	s.eventsFeedMutex.Lock()
 	defer s.eventsFeedMutex.Unlock()
 
@@ -88,6 +91,9 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 // SettlementsFeed returns channel of state updates for event settlements from specific point of time.
 // when there is communication errors with X-feed servers it closes the channels
 func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlementEnvelope, error) {
+	if s == nil {
+		return nil, errors.New("Session is not initialised")
+	}
 	s.eventSettlementsMutex.Lock()
 	defer s.eventSettlementsMutex.Unlock()
 
@@ -158,6 +164,9 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 // Entities returns current snapshot of SportDescriptions.
 // when there is communication errors with X-feed servers error is returned
 func (s *Session) Entities(language string) ([]*SportDescription, error) {
+	if s == nil {
+		return nil, errors.New("Session is not initialised")
+	}
 	s.entitiesMutex.Lock()
 	defer s.entitiesMutex.Unlock()
 	ctx, cancel := context.WithTimeout(context.Background(), s.requestTimeout)
