@@ -188,7 +188,7 @@ type (
 		GeneratedAt     *time.Time
 	}
 
-	// EventSettlement contains settelments for Outcomes for specific event
+	// EventSettlement contains settlements for Outcomes for specific event
 	EventSettlement struct {
 		EventID   string
 		Resulting *EventPoints

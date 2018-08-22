@@ -84,5 +84,5 @@ func (c *Client) Session() (*Session, error) {
 		return c.session, nil
 	}
 
-	return nil, errors.New("There is no ready connection to x-feed")
+	return nil, errors.New("there is no ready connection to x-feed")
 }
