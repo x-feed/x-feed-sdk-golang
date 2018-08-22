@@ -1,0 +1,24 @@
+run:
+    skip-dirs:
+        - vendor
+linters:
+    enable-all: true
+    disable:
+        - interfacer
+        - dupl
+        - gofmt
+        - maligned
+
+linters-settings:
+    golint:
+        min-confidence: 0
+    govet:
+        check-shadowing: true
+    lll:
+        # max line length, lines longer will be reported. Default is 120. '\t' is counted as 1 character.
+        line-length: 120
+
+issues:
+  exclude:
+    - should have a package comment
+    - declaration of "err" shadows declaration

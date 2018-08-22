@@ -1,5 +1,6 @@
 package logging
 
+// Logger represents generic logger which can be used within the client
 type Logger interface {
 	Debug(v ...interface{})
 	Debugf(format string, v ...interface{})

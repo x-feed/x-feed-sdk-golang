@@ -8,8 +8,9 @@ import (
 	pb "github.com/x-feed/x-feed-sdk-golang/pkg/feed"
 )
 
-// sport description DTOs
 type (
+	// SportDescription is sent for each sport which x-feed supports.
+	// It contains list of Periods and MarketTypes which are used for specific sport
 	SportDescription struct {
 		ID          int32
 		Name        string
@@ -17,34 +18,52 @@ type (
 		MarketTypes []*MarketType
 	}
 
+	// Period represents Sport specific timespan of the game, e. g. full time, first half, set, etc.
 	Period struct {
 		ID   int32
 		Name string
 	}
 
+	// MarketType contains template for the Market name
+	// Variables:
+	// "{%participant}" - get participant name by number in market_param "team" (1, 2)
+	// "{$participantN}" - participant by predefined number.
+	// "{+$handicap}", "{-$handicap}" - market_param "handicap"
+	// "{$total}" - market_param "total"
 	MarketType struct {
-		ID           int32
+		ID int32
+		// event.participants = ["Dinamo", "Shakhtar"]
+		// market_params.team = 1
+		// Ex.: "{%participant} Total" -> "Dinamo Total"
 		NameTemplate string
 		OutcomeTypes []*OutcomeType
 	}
 
+	// OutcomeType contains template for the Outcome name
 	OutcomeType struct {
-		ID           int32
+		ID int32
+		// event.participants = ["Dinamo", "Shakhtar"]
+		// market_params.handicap = 1.5
+		// Ex.: "{$participant2} ({-$handicap})" -> "Shakhtar (-1.5)"
 		NameTemplate string
 	}
 
+	// EventPoints represents live game resulting or final game statistics
 	EventPoints struct {
 		PointGroups []*PointsGroup
 	}
 
+	// PointsGroup represents statistics unit of specific type for specific game period
 	PointsGroup struct {
 		PointType     PointType
 		GroupPeriodID int32
 		State         []*State
 	}
 
+	// PointType represents type of statistics unit: Score, Red cards, Corners, etc.
 	PointType int32
 
+	// State represents statistics entry for specific participant
 	State struct {
 		Participant int32
 		Value       int32
@@ -60,16 +79,18 @@ const (
 	PointTypeCorners     PointType = 5
 )
 
-// Event DTOs
 type (
+	// FeedAction defines operation which shall be done on entity: Insert, Update, Delete
 	FeedAction int32
 
+	// EventEnvelope represents state update of specific Event
 	EventEnvelope struct {
 		EventDiff   *Event
 		GeneratedAt *time.Time
 		Action      FeedAction
 	}
 
+	// Event represents Sport event (game) within specific sport/category/league
 	Event struct {
 		ID           string
 		SportID      int32
@@ -82,14 +103,17 @@ type (
 		Statistics   *EventPoints
 	}
 
+	// EventStatus represents state of event, prematch or live
 	EventStatus int32
 
+	// EventTimer represents game timer. For some Sports time direction is counterclockwise (for example for basketball)
 	EventTimer struct {
 		Changed *time.Time
 		Time    *time.Duration
 		State   TimerState
 	}
 
+	// TimerState represents state of the timer: paused, forward, Backward
 	TimerState int32
 )
 
@@ -115,6 +139,7 @@ const (
 
 // market DTOs
 type (
+	// MarketEnvelope represents state update of specific Market
 	MarketEnvelope struct {
 		EventID     string
 		MarketDiff  *Market
@@ -122,6 +147,7 @@ type (
 		Action      FeedAction
 	}
 
+	// Market represents market instance
 	Market struct {
 		ID           string
 		MarketTypeID int32
@@ -129,13 +155,16 @@ type (
 		Outcomes     []*Outcome
 	}
 
+	// MarketParam is key value for specific market parameter (for parametrized markets)
 	MarketParam struct {
 		Type  MarketParamType
 		Value string
 	}
 
+	// MarketParamType represents type of parameter of parametrised market
 	MarketParamType int32
 
+	// Outcome represents specific instance of outcome
 	Outcome struct {
 		ID        string
 		Type      int32
@@ -152,19 +181,21 @@ const (
 	MarketParamTypeTeam     MarketParamType = 4
 )
 
-// settlement DTO
 type (
+	// EventSettlementEnvelope represents state update of specific EventSettlement
 	EventSettlementEnvelope struct {
 		EventSettlement *EventSettlement
 		GeneratedAt     *time.Time
 	}
 
+	// EventSettlement contains settlements for Outcomes for specific event
 	EventSettlement struct {
 		EventID   string
 		Resulting *EventPoints
 		Outcomes  map[string]OutcomeSettlementStatus
 	}
 
+	// OutcomeSettlementStatus represents result status of outcome: unsettled, win, lose, return
 	OutcomeSettlementStatus int32
 )
 

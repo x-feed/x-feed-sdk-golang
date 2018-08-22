@@ -7,9 +7,11 @@ import (
 	"github.com/x-feed/x-feed-sdk-golang/pkg/logging"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/keepalive"
 )
 
+// Client represents X-feed client
 type Client struct {
 	conn *grpc.ClientConn
 
@@ -24,6 +26,7 @@ type Client struct {
 	session *Session
 }
 
+// NewClient provides casual way for creating the Client instance
 func NewClient(cfg Config, logger logging.Logger) (*Client, error) {
 
 	client := &Client{
@@ -75,6 +78,11 @@ func NewClient(cfg Config, logger logging.Logger) (*Client, error) {
 	return client, nil
 }
 
-func (c *Client) Session() *Session {
-	return c.session
+// Session returns instance of session in case where grpc connection is ready
+func (c *Client) Session() (*Session, error) {
+	if c.conn.GetState() == connectivity.Ready {
+		return c.session, nil
+	}
+
+	return nil, errors.New("there is no ready connection to x-feed")
 }
