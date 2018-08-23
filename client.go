@@ -68,6 +68,7 @@ func NewClient(cfg Config, logger logging.Logger) (*Client, error) {
 	}()
 
 	client.session = &Session{
+		clientID: cfg.ClientID,
 		clientConn:     client.conn,
 		requestTimeout: cfg.RequestDeadline,
 		lg:             client.lg,
