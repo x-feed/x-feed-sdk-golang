@@ -2,18 +2,19 @@
 
 
 [[projects]]
-  digest = "1:17fe264ee908afc795734e8c4e63db2accabaf57326dbf21763a7d6b86096260"
+  digest = "1:5d1b5a25486fc7d4e133646d834f6fca7ba1cef9903d40e7aa786c41b89e9e91"
   name = "github.com/golang/protobuf"
   packages = [
     "proto",
+    "protoc-gen-go/descriptor",
     "ptypes",
     "ptypes/any",
     "ptypes/duration",
     "ptypes/timestamp",
   ]
   pruneopts = "UT"
-  revision = "b4deda0973fb4c70b50d226b1af49f3da59f5265"
-  version = "v1.1.0"
+  revision = "aa810b61a9c79d51363740d207bb46cf8e620ed5"
+  version = "v1.2.0"
 
 [[projects]]
   digest = "1:40e195917a951a8bf867cd05de2a46aaf1806c50cf92eebf4c16f78cd196f747"
@@ -25,7 +26,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:b5c3834d33445efdc5a8dcb154bed9e4c211edadbf02f6f5cc20c5e9be26a499"
+  digest = "1:deafe4ab271911fec7de5b693d7faae3f38796d9eb8622e2b9e7df42bb3dfea9"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -37,15 +38,15 @@
     "trace",
   ]
   pruneopts = "UT"
-  revision = "aaf60122140d3fcf75376d319f0554393160eb50"
+  revision = "922f4815f713f213882e8ef45e0d315b164d705c"
 
 [[projects]]
   branch = "master"
-  digest = "1:05662433b3a13c921587a6e622b5722072edff83211efd1cd79eeaeedfd83f07"
+  digest = "1:a3f00ac457c955fe86a41e1495e8f4c54cb5399d609374c5cc26aa7d72e542c8"
   name = "golang.org/x/sys"
   packages = ["unix"]
   pruneopts = "UT"
-  revision = "1c9583448a9c3aa0f9a6a5241bf73c0bd8aafded"
+  revision = "3b58ed4ad3395d483fc92d5d14123ce2c3581fec"
 
 [[projects]]
   digest = "1:a2ab62866c75542dd18d2b069fec854577a20211d7c0ea6ae746072a1dccdd18"
@@ -87,7 +88,7 @@
   revision = "c66870c02cf823ceb633bcd05be3c7cda29976f4"
 
 [[projects]]
-  digest = "1:3dd7996ce6bf52dec6a2f69fa43e7c4cefea1d4dfa3c8ab7a5f8a9f7434e239d"
+  digest = "1:76332e947f184a2dc091db40f22c7089ada36bbc577793074639695af85a10fd"
   name = "google.golang.org/grpc"
   packages = [
     ".",
@@ -110,6 +111,8 @@
     "metadata",
     "naming",
     "peer",
+    "reflection",
+    "reflection/grpc_reflection_v1alpha",
     "resolver",
     "resolver/dns",
     "resolver/passthrough",
@@ -133,7 +136,9 @@
     "golang.org/x/net/context",
     "golang.org/x/time/rate",
     "google.golang.org/grpc",
-    "google.golang.org/grpc/credentials",
+    "google.golang.org/grpc/connectivity",
+    "google.golang.org/grpc/keepalive",
+    "google.golang.org/grpc/reflection",
   ]
   solver-name = "gps-cdcl"
   solver-version = 1

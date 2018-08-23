@@ -56,7 +56,7 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 		return nil, nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), s.requestTimeout)
+	ctx, cancel := context.WithCancel(context.Background())
 	eventResponseStream, err := pb.NewFeedClient(s.clientConn).StreamEvents(ctx, eventRequest)
 	if err != nil {
 		cancel()
@@ -118,7 +118,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), s.requestTimeout)
+	ctx, cancel := context.WithCancel(context.Background())
 	settlementResponseStream, err := pb.NewFeedClient(s.clientConn).StreamSettlements(ctx, settlementRequest)
 	if err != nil {
 		cancel()
