@@ -5,11 +5,11 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
-	pb "github.com/x-feed/x-feed-sdk-golang/pkg/feed"
+	pb "github.com/x-feed/x-feed-sdk-golang/pkg/xfeed_proto"
 )
 
 type (
-	// SportDescription is sent for each sport which x-feed supports.
+	// SportDescription is sent for each sport which x-xfeed_proto supports.
 	// It contains list of Periods and MarketTypes which are used for specific sport
 	SportDescription struct {
 		ID          int32
@@ -71,12 +71,18 @@ type (
 )
 
 const (
-	PointTypeUnknown     PointType = 0
-	PointTypeScore       PointType = 1
-	PointTypeRedСards    PointType = 2
+	// PointTypeUnknown shall not be used as type of points, if x-xfeed_proto sends this, it means  something went wrong
+	PointTypeUnknown PointType = 0
+	// PointTypeScore represents game score
+	PointTypeScore PointType = 1
+	// PointTypeRedСards represents Red Cards
+	PointTypeRedСards PointType = 2
+	// PointTypeYellowСards represents yellow cards
 	PointTypeYellowСards PointType = 3
-	PointTypePenalties   PointType = 4
-	PointTypeCorners     PointType = 5
+	// PointTypePenalties represents penalties
+	PointTypePenalties PointType = 4
+	//  PointTypeCorners represents corners
+	PointTypeCorners PointType = 5
 )
 
 type (
@@ -118,23 +124,34 @@ type (
 )
 
 const (
+	// Unknown action shall not be received from x-xfeed_proto, in case of receiving this value
 	Unknown FeedAction = 0
-	Insert  FeedAction = 1
-	Delete  FeedAction = 2
-	Update  FeedAction = 3
+	// Insert action indicates that brand new entity is received
+	Insert FeedAction = 1
+	// Delete action indicates that x-xfeed_proto is not going to keep sending updates for specific entity
+	Delete FeedAction = 2
+	// Update action indicates that update for existent entity was received
+	Update FeedAction = 3
 )
 
 const (
-	EventStatusUnknown  EventStatus = 0
+	// EventStatusUnknown shall not be received
+	EventStatusUnknown EventStatus = 0
+	// EventStatusPrematch indicates that match is in prematch
 	EventStatusPrematch EventStatus = 1
-	EventStatusLive     EventStatus = 2
+	// EventStatusLive indicates that match is in live
+	EventStatusLive EventStatus = 2
 )
 
 const (
-	TimerStateUnknown  TimerState = 0
-	TimerStateForward  TimerState = 1
+	// TimerStateUnknown shall not be received, it indicates that something is wrong on x-xfeed_proto side
+	TimerStateUnknown TimerState = 0
+	// TimerStateForward indicates that timer need to increase it's value
+	TimerStateForward TimerState = 1
+	// TimerStateBackward indicates that timer need to decrease it's value
 	TimerStateBackward TimerState = 2
-	TimerStatePause    TimerState = 3
+	// TimerStatePause indicates that timer is paused
+	TimerStatePause TimerState = 3
 )
 
 // market DTOs
@@ -174,11 +191,16 @@ type (
 )
 
 const (
-	MarketParamTypeUnknown  MarketParamType = 0
-	MarketParamTypePeriod   MarketParamType = 1
-	MarketParamTypeTotal    MarketParamType = 2
+	// MarketParamTypeUnknown shall not be used
+	MarketParamTypeUnknown MarketParamType = 0
+	// MarketParamTypePeriod represents market parameter which reflects period of the game
+	MarketParamTypePeriod MarketParamType = 1
+	// MarketParamTypeTotal represents market parameter which reflects total count
+	MarketParamTypeTotal MarketParamType = 2
+	// MarketParamTypeHandicap represents market parameter which reflects fora for teams
 	MarketParamTypeHandicap MarketParamType = 3
-	MarketParamTypeTeam     MarketParamType = 4
+	// MarketParamTypeTeam epresents market parameter which reflects competitor team order number
+	MarketParamTypeTeam MarketParamType = 4
 )
 
 type (
@@ -200,6 +222,7 @@ type (
 )
 
 const (
+	// OutcomeSettlementUnknown shall not be used
 	OutcomeSettlementUnknown   OutcomeSettlementStatus = 0
 	OutcomeSettlementUnsettled OutcomeSettlementStatus = 1
 	OutcomeSettlementWin       OutcomeSettlementStatus = 2

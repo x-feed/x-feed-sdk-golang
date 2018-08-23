@@ -4,7 +4,7 @@ import (
 	"time"
 )
 
-// Config represents configuration of x-feed Client
+// Config represents configuration of x-xfeed_proto Client
 type Config struct {
 	ClientID string
 

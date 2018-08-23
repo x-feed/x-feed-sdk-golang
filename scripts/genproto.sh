@@ -7,4 +7,4 @@ set -e
 
 CURRENT_DIR="$(pwd -P)"
 
-docker run --rm -v $CURRENT_DIR/pkg:/defs namely/protoc-all:1.15 -i feed -l go -d /defs -o .
+docker run --rm -v $CURRENT_DIR/pkg:/defs namely/protoc-all:1.15 -i xfeed_proto -l go -d /defs -o .

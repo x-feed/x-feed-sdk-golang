@@ -8,13 +8,13 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
-	pb "github.com/x-feed/x-feed-sdk-golang/pkg/feed"
 	"github.com/x-feed/x-feed-sdk-golang/pkg/logging"
+	pb "github.com/x-feed/x-feed-sdk-golang/pkg/xfeed_proto"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 )
 
-// Session represents started and working session of x-feed.
+// Session represents started and working session of x-xfeed_proto.
 type Session struct {
 	lg             logging.Logger
 	requestTimeout time.Duration
@@ -34,7 +34,7 @@ type Session struct {
 }
 
 // EventsFeed returns channels of state updates for Events and Markets.
-// when there are communication errors with X-feed servers it closes the channels
+// when there are communication errors with X-xfeed_proto servers it closes the channels
 func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error) {
 	if s == nil {
 		return nil, nil, errors.New("session is not initialised")
@@ -89,7 +89,7 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 }
 
 // SettlementsFeed returns channel of state updates for event settlements from specific point of time.
-// when there is communication errors with X-feed servers it closes the channels
+// when there is communication errors with X-xfeed_proto servers it closes the channels
 func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlementEnvelope, error) {
 	if s == nil {
 		return nil, errors.New("session is not initialised")
@@ -162,7 +162,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 }
 
 // Entities returns current snapshot of SportDescriptions.
-// when there is communication errors with X-feed servers error is returned
+// when there is communication errors with X-xfeed_proto servers error is returned
 func (s *Session) Entities(language string) ([]*SportDescription, error) {
 	if s == nil {
 		return nil, errors.New("session is not initialised")
@@ -260,7 +260,7 @@ func parseTimestamp(genTs *timestamp.Timestamp) (time.Time, error) {
 		generatedTs, err = ptypes.Timestamp(genTs)
 		if err != nil {
 
-			return generatedTs, errors.Errorf("can't parse x-feed GeneratedTs timestamp: %v, err: %v", genTs, err)
+			return generatedTs, errors.Errorf("can't parse x-xfeed_proto GeneratedTs timestamp: %v, err: %v", genTs, err)
 		}
 	}
 

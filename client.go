@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/keepalive"
 )
 
-// Client represents X-feed client
+// Client represents X-xfeed_proto client
 type Client struct {
 	conn *grpc.ClientConn
 
@@ -41,7 +41,7 @@ func NewClient(cfg Config, logger logging.Logger) (*Client, error) {
 	}
 
 	opts := []grpc.DialOption{
-		grpc.WithInsecure(), //TODO: discuss with x-feed team and fix security
+		grpc.WithInsecure(), //TODO: discuss with x-xfeed_proto team and fix security
 		grpc.WithKeepaliveParams(keepaliveCfg),
 		grpc.WithDefaultCallOptions(
 			grpc.MaxCallRecvMsgSize(cfg.MaxMessageSize),
@@ -84,5 +84,5 @@ func (c *Client) Session() (*Session, error) {
 		return c.session, nil
 	}
 
-	return nil, errors.New("there is no ready connection to x-feed")
+	return nil, errors.New("there is no ready connection to x-xfeed_proto")
 }
