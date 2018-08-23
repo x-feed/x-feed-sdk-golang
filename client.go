@@ -7,7 +7,6 @@ import (
 	"github.com/x-feed/x-feed-sdk-golang/pkg/logging"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -80,9 +79,9 @@ func NewClient(cfg Config, logger logging.Logger) (*Client, error) {
 
 // Session returns instance of session in case where grpc connection is ready
 func (c *Client) Session() (*Session, error) {
-	if c.conn.GetState() == connectivity.Ready {
-		return c.session, nil
+	if c == nil {
+		return nil, errors.New("client is not initialized")
 	}
 
-	return nil, errors.New("there is no ready connection to x-xfeed_proto")
+	return c.session, nil
 }
