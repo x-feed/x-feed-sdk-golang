@@ -20,7 +20,7 @@ type Client struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	lg logging.Logger
+	logger logging.Logger
 
 	session *Session
 }
@@ -29,8 +29,8 @@ type Client struct {
 func NewClient(cfg Config, logger logging.Logger) (*Client, error) {
 
 	client := &Client{
-		cfg: cfg,
-		lg:  logger,
+		cfg:    cfg,
+		logger: logger,
 	}
 
 	keepaliveCfg := keepalive.ClientParameters{
@@ -57,21 +57,21 @@ func NewClient(cfg Config, logger logging.Logger) (*Client, error) {
 		return nil, errors.Errorf("grpc dial err: %v", err)
 	}
 
-	client.lg.Debugf("connection successful to host %s", cfg.ServerURI)
+	client.logger.Debugf("connection successful to host %s", cfg.ServerURI)
 
 	go func() {
 		<-client.ctx.Done()
 		err := client.conn.Close()
 		if err != nil {
-			client.lg.Errorf("connection close error %v", err)
+			client.logger.Errorf("connection close error %v", err)
 		}
 	}()
 
 	client.session = &Session{
-		clientID: cfg.ClientID,
+		clientID:       cfg.ClientID,
 		clientConn:     client.conn,
 		requestTimeout: cfg.RequestDeadline,
-		lg:             client.lg,
+		logger:         client.logger,
 		limiter:        rate.NewLimiter(rate.Limit(cfg.RequestRateLimit), cfg.RequestRateLimitBurst),
 	}
 

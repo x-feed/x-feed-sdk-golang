@@ -16,7 +16,7 @@ import (
 
 // Session represents started and working session of x-xfeed_proto.
 type Session struct {
-	lg             logging.Logger
+	logger         logging.Logger
 	requestTimeout time.Duration
 	clientID       string
 
@@ -72,7 +72,7 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 		for {
 			eventsResponse, err := eventResponseStream.Recv()
 			if err != nil {
-				s.lg.Errorf("Can't get EventsResponse %v", err)
+				s.logger.Errorf("Can't get EventsResponse %v", err)
 				close(s.eventsStream)
 				close(s.marketsStream)
 				s.eventsStream = nil
@@ -133,7 +133,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 		for {
 			settlementResponse, err := settlementResponseStream.Recv()
 			if err != nil {
-				s.lg.Errorf("Can't get settlementResponse %v", err)
+				s.logger.Errorf("can't get settlementResponse %v", err)
 				close(s.eventSettlements)
 				s.eventSettlements = nil
 
@@ -146,6 +146,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 			}
 
 			if eventSettlements := settlementResponse.GetMultipleEventsSettlement(); eventSettlements == nil {
+				s.logger.Errorf("eventSettlements is empty %v", err)
 
 				continue
 			}
@@ -162,7 +163,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 }
 
 // Entities returns current snapshot of SportDescriptions.
-// when there is communication errors with X-xfeed_proto servers error is returned
+// when there is communication errors with X-feed servers error is returned
 func (s *Session) Entities(language string) ([]*SportDescription, error) {
 	if s == nil {
 		return nil, errors.New("session is not initialised")
@@ -215,7 +216,7 @@ func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 				}
 				e, err := newEvent(eventDiff.GetEvent())
 				if err != nil {
-					s.lg.Errorf("can't parse FeedEvent: %v", err)
+					s.logger.Errorf("can't parse FeedEvent: %v", err)
 
 					continue
 				}
