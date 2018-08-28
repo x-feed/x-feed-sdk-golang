@@ -13,6 +13,7 @@ type (
 	// It contains list of Periods and MarketTypes which are used for specific sport
 	SportDescription struct {
 		ID          int32
+		Language    string
 		Name        string
 		Periods     []*Period
 		MarketTypes []*MarketType
@@ -230,10 +231,11 @@ const (
 	OutcomeSettlementReturn    OutcomeSettlementStatus = 4
 )
 
-func newSportDescription(sportDescription *pb.SportDescription) *SportDescription {
+func newSportDescription(sportDescription *pb.SportDescription, language string) *SportDescription {
 	result := &SportDescription{
-		ID:   sportDescription.GetSportId(),
-		Name: sportDescription.GetSportName(),
+		ID:       sportDescription.GetSportId(),
+		Name:     sportDescription.GetSportName(),
+		Language: language,
 	}
 
 	result.Periods = make([]*Period, 0, len(sportDescription.GetPeriods()))
@@ -272,14 +274,15 @@ func newSportDescription(sportDescription *pb.SportDescription) *SportDescriptio
 }
 
 func newEvent(feedEvent *pb.FeedEvent) (*Event, error) {
-	startTs, err := ptypes.Timestamp(feedEvent.GetStartTs())
-	if err != nil {
-		return nil, errors.Wrap(err, "can't parse Event StartTs")
+	var err error
+	startTs, startTsValidationError := ptypes.Timestamp(feedEvent.GetStartTs())
+	if startTsValidationError != nil {
+		err = errors.Wrap(startTsValidationError, "can't parse Event StartTs")
 	}
 
-	timer, err := newEventTimer(feedEvent.GetTimer())
-	if err != nil {
-		return nil, errors.Wrap(err, "can't parse Event Timer")
+	timer, timerParseError := newEventTimer(feedEvent.GetTimer())
+	if timerParseError != nil {
+		err = errors.Wrap(timerParseError, "can't parse Event Timer")
 	}
 
 	return &Event{
@@ -291,7 +294,7 @@ func newEvent(feedEvent *pb.FeedEvent) (*Event, error) {
 		Start:        &startTs,
 		Participants: feedEvent.GetParticipants(),
 		Timer:        timer,
-	}, nil
+	}, err
 }
 
 func newEventStatus(eventStatus pb.FeedEvent_EventStatus) EventStatus {

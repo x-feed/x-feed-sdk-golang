@@ -191,7 +191,7 @@ func (s *Session) Entities(language string) ([]*SportDescription, error) {
 
 	result := make([]*SportDescription, 0, len(entities.GetSportDescriptions()))
 	for _, sportDescription := range entities.GetSportDescriptions() {
-		result = append(result, newSportDescription(sportDescription))
+		result = append(result, newSportDescription(sportDescription, language))
 	}
 
 	return result, nil
@@ -217,7 +217,7 @@ func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 				e, err := newEvent(eventDiff.GetEvent())
 				if err != nil {
 					s.logger.Errorf("can't parse FeedEvent: %v", err)
-
+					s.logger.Debugf("FeedEvent: %+v", eventDiff.GetEvent())
 					continue
 				}
 
