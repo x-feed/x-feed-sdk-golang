@@ -268,6 +268,7 @@ func newSportDescription(sportDescription *pb.SportDescription, language string)
 				NameTemplate: outcomeType.GetOutcomeNameTemplate(),
 			})
 		}
+		result.MarketTypes = append(result.MarketTypes, mt)
 	}
 
 	return result
