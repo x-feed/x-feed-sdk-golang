@@ -66,8 +66,8 @@ type (
 
 	// State represents statistics entry for specific participant
 	State struct {
-		Participant int32
-		Value       int32
+		ParticipantIndex int32
+		Value            int32
 	}
 )
 
@@ -431,7 +431,7 @@ func newEventPoints(eventPoints *pb.EventPoints) *EventPoints {
 				Value: state.GetValue(),
 			}
 			if state.GetStateParams() != nil {
-				s.Participant = state.GetStateParams().GetParticipant()
+				s.ParticipantIndex = state.GetStateParams().GetParticipant()
 			}
 			states = append(states, s)
 		}
