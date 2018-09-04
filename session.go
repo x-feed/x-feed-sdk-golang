@@ -262,7 +262,7 @@ func parseTimestamp(genTs *timestamp.Timestamp) (time.Time, error) {
 		generatedTs, err = ptypes.Timestamp(genTs)
 		if err != nil {
 
-			return generatedTs, errors.Errorf("can't parse x-xfeed_proto GeneratedTs timestamp: %v, err: %v", genTs, err)
+			return generatedTs, errors.Errorf("can't parse x-xfeed GeneratedTs timestamp: %v, err: %v", genTs, err)
 		}
 	}
 
