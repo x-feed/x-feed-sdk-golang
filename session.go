@@ -216,10 +216,8 @@ func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 				}
 				e, err := newEvent(eventDiff.GetEvent())
 				if err != nil {
-					s.logger.Debugf("can't parse FeedEvent: %v", err)
-					s.logger.Debugf("FeedEvent: %+v", eventDiff.GetEvent())
+					s.logger.Debugf("can't parse FeedEvent error: %v, message: %+v", err, eventDiff.GetEvent())
 					// TODO: fix this after model stabilizing
-					//continue
 				}
 
 				s.eventsStream <- &EventEnvelope{
