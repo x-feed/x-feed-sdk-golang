@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Session represents started and working session of x-feed_proto.
+// Session represents started and working session of x-feed.
 type Session struct {
 	logger         logging.Logger
 	requestTimeout time.Duration
