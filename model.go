@@ -87,14 +87,14 @@ const (
 )
 
 type (
-	// FeedAction defines operation which shall be done on entity: Insert, Update, Delete
-	FeedAction int32
+	// Action defines operation which shall be done on entity: InsertAction, UpdateAction, DeleteAction
+	Action int32
 
 	// EventEnvelope represents state update of specific Event
 	EventEnvelope struct {
 		EventDiff   *Event
 		GeneratedAt *time.Time
-		Action      FeedAction
+		Action      Action
 	}
 
 	// Event represents Sport event (game) within specific sport/category/league
@@ -125,14 +125,14 @@ type (
 )
 
 const (
-	// Unknown action shall not be received from x-feed, in case of receiving this value
-	Unknown FeedAction = 0
-	// Insert action indicates that brand new entity is received
-	Insert FeedAction = 1
-	// Delete action indicates that x-feed is not going to keep sending updates for specific entity
-	Delete FeedAction = 2
-	// Update action indicates that update for existent entity was received
-	Update FeedAction = 3
+	// UnknownAction action shall not be received from x-feed, in case of receiving this value
+	UnknownAction Action = 0
+	// InsertAction action indicates that brand new entity is received
+	InsertAction Action = 1
+	// DeleteAction action indicates that x-feed is not going to keep sending updates for specific entity
+	DeleteAction Action = 2
+	// UpdateAction action indicates that update for existent entity was received
+	UpdateAction Action = 3
 )
 
 const (
@@ -162,7 +162,7 @@ type (
 		EventID     string
 		MarketDiff  *Market
 		GeneratedAt *time.Time
-		Action      FeedAction
+		Action      Action
 	}
 
 	// Market represents market instance
@@ -478,15 +478,15 @@ func newOutcomeSettlementStatus(status pb.OutcomeSettlement_SettlementType) Outc
 	}
 }
 
-func newFeedAction(action pb.DiffType) FeedAction {
+func newFeedAction(action pb.DiffType) Action {
 	switch action {
 	case pb.DiffType_UPDATE:
-		return Update
+		return UpdateAction
 	case pb.DiffType_DELETE:
-		return Delete
+		return DeleteAction
 	case pb.DiffType_INSERT:
-		return Insert
+		return InsertAction
 	default:
-		return Unknown
+		return UnknownAction
 	}
 }

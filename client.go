@@ -80,7 +80,7 @@ func NewClient(cfg Config, logger logging.Logger) (*Client, error) {
 
 // Session returns instance of session in case where grpc connection is ready
 func (c *Client) Session() (*Session, error) {
-	if c == nil {
+	if c == nil || c.session == nil {
 		return nil, errors.New("client is not initialized")
 	}
 
