@@ -9,7 +9,7 @@ import (
 )
 
 type (
-	// SportDescription is sent for each sport which x-xfeed_proto supports.
+	// SportDescription is sent for each sport which x-feed supports.
 	// It contains list of Periods and MarketTypes which are used for specific sport
 	SportDescription struct {
 		ID          int32
@@ -72,7 +72,7 @@ type (
 )
 
 const (
-	// PointTypeUnknown shall not be used as type of points, if x-xfeed_proto sends this, it means  something went wrong
+	// PointTypeUnknown shall not be used as type of points, if x-feed sends this, it means  something went wrong
 	PointTypeUnknown PointType = 0
 	// PointTypeScore represents game score
 	PointTypeScore PointType = 1
@@ -125,11 +125,11 @@ type (
 )
 
 const (
-	// Unknown action shall not be received from x-xfeed_proto, in case of receiving this value
+	// Unknown action shall not be received from x-feed, in case of receiving this value
 	Unknown FeedAction = 0
 	// Insert action indicates that brand new entity is received
 	Insert FeedAction = 1
-	// Delete action indicates that x-xfeed_proto is not going to keep sending updates for specific entity
+	// Delete action indicates that x-feed is not going to keep sending updates for specific entity
 	Delete FeedAction = 2
 	// Update action indicates that update for existent entity was received
 	Update FeedAction = 3
@@ -145,7 +145,7 @@ const (
 )
 
 const (
-	// TimerStateUnknown shall not be received, it indicates that something is wrong on x-xfeed_proto side
+	// TimerStateUnknown shall not be received, it indicates that something is wrong on x-feed side
 	TimerStateUnknown TimerState = 0
 	// TimerStateForward indicates that timer need to increase it's value
 	TimerStateForward TimerState = 1

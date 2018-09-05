@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// Session represents started and working session of x-xfeed_proto.
+// Session represents started and working session of x-feed_proto.
 type Session struct {
 	logger         logging.Logger
 	requestTimeout time.Duration
@@ -34,7 +34,7 @@ type Session struct {
 }
 
 // EventsFeed returns channels of state updates for Events and Markets.
-// when there are communication errors with X-xfeed_proto servers it closes the channels
+// when there are communication errors with X-feed servers it closes the channels
 func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error) {
 	if s == nil {
 		return nil, nil, errors.New("session is not initialised")
@@ -89,7 +89,7 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 }
 
 // SettlementsFeed returns channel of state updates for event settlements from specific point of time.
-// when there is communication errors with X-xfeed_proto servers it closes the channels
+// when there is communication errors with X-feed servers it closes the channels
 func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlementEnvelope, error) {
 	if s == nil {
 		return nil, errors.New("session is not initialised")
@@ -260,7 +260,7 @@ func parseTimestamp(genTs *timestamp.Timestamp) (time.Time, error) {
 		generatedTs, err = ptypes.Timestamp(genTs)
 		if err != nil {
 
-			return generatedTs, errors.Errorf("can't parse x-xfeed GeneratedTs timestamp: %v, err: %v", genTs, err)
+			return generatedTs, errors.Errorf("can't parse x-feed GeneratedTs timestamp: %v, err: %v", genTs, err)
 		}
 	}
 
