@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
-package feed;
+package xfeed_proto;
 
 
 message SportDescriptionsRequest {

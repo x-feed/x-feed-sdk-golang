@@ -2,9 +2,9 @@ syntax = "proto3";
 
 import "google/protobuf/timestamp.proto";
 
-import "feed/event_points.proto";
+import "xfeed_proto/event_points.proto";
 
-package feed;
+package xfeed_proto;
 
 
 message StreamSettlementsRequest {

@@ -1,10 +1,10 @@
 syntax = "proto3";
 
-import "feed/events_stream.proto";
-import "feed/settlement_stream.proto";
-import "feed/sport_descriptions.proto";
+import "xfeed_proto/events_stream.proto";
+import "xfeed_proto/settlement_stream.proto";
+import "xfeed_proto/sport_descriptions.proto";
 
-package feed;
+package xfeed_proto;
 
 
 service Feed {

@@ -8,15 +8,15 @@ import (
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/timestamp"
 	"github.com/pkg/errors"
-	pb "github.com/x-feed/x-feed-sdk-golang/pkg/feed"
 	"github.com/x-feed/x-feed-sdk-golang/pkg/logging"
+	pb "github.com/x-feed/x-feed-sdk-golang/pkg/xfeed_proto"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
 )
 
 // Session represents started and working session of x-feed.
 type Session struct {
-	lg             logging.Logger
+	logger         logging.Logger
 	requestTimeout time.Duration
 	clientID       string
 
@@ -56,7 +56,7 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 		return nil, nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), s.requestTimeout)
+	ctx, cancel := context.WithCancel(context.Background())
 	eventResponseStream, err := pb.NewFeedClient(s.clientConn).StreamEvents(ctx, eventRequest)
 	if err != nil {
 		cancel()
@@ -72,7 +72,7 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 		for {
 			eventsResponse, err := eventResponseStream.Recv()
 			if err != nil {
-				s.lg.Errorf("Can't get EventsResponse %v", err)
+				s.logger.Errorf("Can't get EventsResponse %v", err)
 				close(s.eventsStream)
 				close(s.marketsStream)
 				s.eventsStream = nil
@@ -118,7 +118,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 		return nil, err
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), s.requestTimeout)
+	ctx, cancel := context.WithCancel(context.Background())
 	settlementResponseStream, err := pb.NewFeedClient(s.clientConn).StreamSettlements(ctx, settlementRequest)
 	if err != nil {
 		cancel()
@@ -133,7 +133,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 		for {
 			settlementResponse, err := settlementResponseStream.Recv()
 			if err != nil {
-				s.lg.Errorf("Can't get settlementResponse %v", err)
+				s.logger.Errorf("can't get settlementResponse %v", err)
 				close(s.eventSettlements)
 				s.eventSettlements = nil
 
@@ -146,6 +146,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 			}
 
 			if eventSettlements := settlementResponse.GetMultipleEventsSettlement(); eventSettlements == nil {
+				s.logger.Errorf("eventSettlements is empty %v", err)
 
 				continue
 			}
@@ -190,7 +191,7 @@ func (s *Session) Entities(language string) ([]*SportDescription, error) {
 
 	result := make([]*SportDescription, 0, len(entities.GetSportDescriptions()))
 	for _, sportDescription := range entities.GetSportDescriptions() {
-		result = append(result, newSportDescription(sportDescription))
+		result = append(result, newSportDescription(sportDescription, language))
 	}
 
 	return result, nil
@@ -215,9 +216,8 @@ func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 				}
 				e, err := newEvent(eventDiff.GetEvent())
 				if err != nil {
-					s.lg.Errorf("can't parse FeedEvent: %v", err)
-
-					continue
+					s.logger.Debugf("can't parse FeedEvent error: %v, message: %+v", err, eventDiff.GetEvent())
+					// TODO: fix this after model stabilizing
 				}
 
 				s.eventsStream <- &EventEnvelope{

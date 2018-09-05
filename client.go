@@ -7,7 +7,6 @@ import (
 	"github.com/x-feed/x-feed-sdk-golang/pkg/logging"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/connectivity"
 	"google.golang.org/grpc/keepalive"
 )
 
@@ -21,7 +20,7 @@ type Client struct {
 	ctx    context.Context
 	cancel context.CancelFunc
 
-	lg logging.Logger
+	logger logging.Logger
 
 	session *Session
 }
@@ -30,8 +29,8 @@ type Client struct {
 func NewClient(cfg Config, logger logging.Logger) (*Client, error) {
 
 	client := &Client{
-		cfg: cfg,
-		lg:  logger,
+		cfg:    cfg,
+		logger: logger,
 	}
 
 	keepaliveCfg := keepalive.ClientParameters{
@@ -58,20 +57,21 @@ func NewClient(cfg Config, logger logging.Logger) (*Client, error) {
 		return nil, errors.Errorf("grpc dial err: %v", err)
 	}
 
-	client.lg.Debugf("connection successful to host %s", cfg.ServerURI)
+	client.logger.Debugf("connection successful to host %s", cfg.ServerURI)
 
 	go func() {
 		<-client.ctx.Done()
 		err := client.conn.Close()
 		if err != nil {
-			client.lg.Errorf("connection close error %v", err)
+			client.logger.Errorf("connection close error %v", err)
 		}
 	}()
 
 	client.session = &Session{
+		clientID:       cfg.ClientID,
 		clientConn:     client.conn,
 		requestTimeout: cfg.RequestDeadline,
-		lg:             client.lg,
+		logger:         client.logger,
 		limiter:        rate.NewLimiter(rate.Limit(cfg.RequestRateLimit), cfg.RequestRateLimitBurst),
 	}
 
@@ -80,9 +80,9 @@ func NewClient(cfg Config, logger logging.Logger) (*Client, error) {
 
 // Session returns instance of session in case where grpc connection is ready
 func (c *Client) Session() (*Session, error) {
-	if c.conn.GetState() == connectivity.Ready {
-		return c.session, nil
+	if c == nil || c.session == nil {
+		return nil, errors.New("client is not initialized")
 	}
 
-	return nil, errors.New("there is no ready connection to x-feed")
+	return c.session, nil
 }

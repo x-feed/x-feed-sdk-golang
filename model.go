@@ -5,7 +5,7 @@ import (
 
 	"github.com/golang/protobuf/ptypes"
 	"github.com/pkg/errors"
-	pb "github.com/x-feed/x-feed-sdk-golang/pkg/feed"
+	pb "github.com/x-feed/x-feed-sdk-golang/pkg/xfeed_proto"
 )
 
 type (
@@ -13,6 +13,7 @@ type (
 	// It contains list of Periods and MarketTypes which are used for specific sport
 	SportDescription struct {
 		ID          int32
+		Language    string
 		Name        string
 		Periods     []*Period
 		MarketTypes []*MarketType
@@ -65,29 +66,35 @@ type (
 
 	// State represents statistics entry for specific participant
 	State struct {
-		Participant int32
-		Value       int32
+		ParticipantIndex int32
+		Value            int32
 	}
 )
 
 const (
-	PointTypeUnknown     PointType = 0
-	PointTypeScore       PointType = 1
-	PointTypeRedСards    PointType = 2
+	// PointTypeUnknown shall not be used as type of points, if x-feed sends this, it means  something went wrong
+	PointTypeUnknown PointType = 0
+	// PointTypeScore represents game score
+	PointTypeScore PointType = 1
+	// PointTypeRedСards represents Red Cards
+	PointTypeRedСards PointType = 2
+	// PointTypeYellowСards represents yellow cards
 	PointTypeYellowСards PointType = 3
-	PointTypePenalties   PointType = 4
-	PointTypeCorners     PointType = 5
+	// PointTypePenalties represents penalties
+	PointTypePenalties PointType = 4
+	//  PointTypeCorners represents corners
+	PointTypeCorners PointType = 5
 )
 
 type (
-	// FeedAction defines operation which shall be done on entity: Insert, Update, Delete
-	FeedAction int32
+	// Action defines operation which shall be done on entity: InsertAction, UpdateAction, DeleteAction
+	Action int32
 
 	// EventEnvelope represents state update of specific Event
 	EventEnvelope struct {
 		EventDiff   *Event
 		GeneratedAt *time.Time
-		Action      FeedAction
+		Action      Action
 	}
 
 	// Event represents Sport event (game) within specific sport/category/league
@@ -118,23 +125,34 @@ type (
 )
 
 const (
-	Unknown FeedAction = 0
-	Insert  FeedAction = 1
-	Delete  FeedAction = 2
-	Update  FeedAction = 3
+	// UnknownAction action shall not be received from x-feed, in case of receiving this value
+	UnknownAction Action = 0
+	// InsertAction action indicates that brand new entity is received
+	InsertAction Action = 1
+	// DeleteAction action indicates that x-feed is not going to keep sending updates for specific entity
+	DeleteAction Action = 2
+	// UpdateAction action indicates that update for existent entity was received
+	UpdateAction Action = 3
 )
 
 const (
-	EventStatusUnknown  EventStatus = 0
+	// EventStatusUnknown shall not be received
+	EventStatusUnknown EventStatus = 0
+	// EventStatusPrematch indicates that match is in prematch
 	EventStatusPrematch EventStatus = 1
-	EventStatusLive     EventStatus = 2
+	// EventStatusLive indicates that match is in live
+	EventStatusLive EventStatus = 2
 )
 
 const (
-	TimerStateUnknown  TimerState = 0
-	TimerStateForward  TimerState = 1
+	// TimerStateUnknown shall not be received, it indicates that something is wrong on x-feed side
+	TimerStateUnknown TimerState = 0
+	// TimerStateForward indicates that timer need to increase it's value
+	TimerStateForward TimerState = 1
+	// TimerStateBackward indicates that timer need to decrease it's value
 	TimerStateBackward TimerState = 2
-	TimerStatePause    TimerState = 3
+	// TimerStatePause indicates that timer is paused
+	TimerStatePause TimerState = 3
 )
 
 // market DTOs
@@ -144,7 +162,7 @@ type (
 		EventID     string
 		MarketDiff  *Market
 		GeneratedAt *time.Time
-		Action      FeedAction
+		Action      Action
 	}
 
 	// Market represents market instance
@@ -174,11 +192,16 @@ type (
 )
 
 const (
-	MarketParamTypeUnknown  MarketParamType = 0
-	MarketParamTypePeriod   MarketParamType = 1
-	MarketParamTypeTotal    MarketParamType = 2
+	// MarketParamTypeUnknown shall not be used
+	MarketParamTypeUnknown MarketParamType = 0
+	// MarketParamTypePeriod represents market parameter which reflects period of the game
+	MarketParamTypePeriod MarketParamType = 1
+	// MarketParamTypeTotal represents market parameter which reflects total count
+	MarketParamTypeTotal MarketParamType = 2
+	// MarketParamTypeHandicap represents market parameter which reflects fora for teams
 	MarketParamTypeHandicap MarketParamType = 3
-	MarketParamTypeTeam     MarketParamType = 4
+	// MarketParamTypeTeam epresents market parameter which reflects competitor team order number
+	MarketParamTypeTeam MarketParamType = 4
 )
 
 type (
@@ -200,6 +223,7 @@ type (
 )
 
 const (
+	// OutcomeSettlementUnknown shall not be used
 	OutcomeSettlementUnknown   OutcomeSettlementStatus = 0
 	OutcomeSettlementUnsettled OutcomeSettlementStatus = 1
 	OutcomeSettlementWin       OutcomeSettlementStatus = 2
@@ -207,10 +231,11 @@ const (
 	OutcomeSettlementReturn    OutcomeSettlementStatus = 4
 )
 
-func newSportDescription(sportDescription *pb.SportDescription) *SportDescription {
+func newSportDescription(sportDescription *pb.SportDescription, language string) *SportDescription {
 	result := &SportDescription{
-		ID:   sportDescription.GetSportId(),
-		Name: sportDescription.GetSportName(),
+		ID:       sportDescription.GetSportId(),
+		Name:     sportDescription.GetSportName(),
+		Language: language,
 	}
 
 	result.Periods = make([]*Period, 0, len(sportDescription.GetPeriods()))
@@ -243,20 +268,22 @@ func newSportDescription(sportDescription *pb.SportDescription) *SportDescriptio
 				NameTemplate: outcomeType.GetOutcomeNameTemplate(),
 			})
 		}
+		result.MarketTypes = append(result.MarketTypes, mt)
 	}
 
 	return result
 }
 
 func newEvent(feedEvent *pb.FeedEvent) (*Event, error) {
-	startTs, err := ptypes.Timestamp(feedEvent.GetStartTs())
-	if err != nil {
-		return nil, errors.Wrap(err, "can't parse Event StartTs")
+	var err error
+	startTs, startTsValidationError := ptypes.Timestamp(feedEvent.GetStartTs())
+	if startTsValidationError != nil {
+		err = errors.Wrap(startTsValidationError, "can't parse Event StartTs")
 	}
 
-	timer, err := newEventTimer(feedEvent.GetTimer())
-	if err != nil {
-		return nil, errors.Wrap(err, "can't parse Event Timer")
+	timer, timerParseError := newEventTimer(feedEvent.GetTimer())
+	if timerParseError != nil {
+		err = errors.Wrap(timerParseError, "can't parse Event Timer")
 	}
 
 	return &Event{
@@ -268,7 +295,7 @@ func newEvent(feedEvent *pb.FeedEvent) (*Event, error) {
 		Start:        &startTs,
 		Participants: feedEvent.GetParticipants(),
 		Timer:        timer,
-	}, nil
+	}, err
 }
 
 func newEventStatus(eventStatus pb.FeedEvent_EventStatus) EventStatus {
@@ -404,7 +431,7 @@ func newEventPoints(eventPoints *pb.EventPoints) *EventPoints {
 				Value: state.GetValue(),
 			}
 			if state.GetStateParams() != nil {
-				s.Participant = state.GetStateParams().GetParticipant()
+				s.ParticipantIndex = state.GetStateParams().GetParticipant()
 			}
 			states = append(states, s)
 		}
@@ -451,15 +478,15 @@ func newOutcomeSettlementStatus(status pb.OutcomeSettlement_SettlementType) Outc
 	}
 }
 
-func newFeedAction(action pb.DiffType) FeedAction {
+func newFeedAction(action pb.DiffType) Action {
 	switch action {
 	case pb.DiffType_UPDATE:
-		return Update
+		return UpdateAction
 	case pb.DiffType_DELETE:
-		return Delete
+		return DeleteAction
 	case pb.DiffType_INSERT:
-		return Insert
+		return InsertAction
 	default:
-		return Unknown
+		return UnknownAction
 	}
 }
