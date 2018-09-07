@@ -310,6 +310,9 @@ func newEventStatus(eventStatus pb.FeedEvent_EventStatus) EventStatus {
 }
 
 func newEventTimer(eventTimer *pb.EventTimer) (*EventTimer, error) {
+	if eventTimer == nil {
+		return nil, nil
+	}
 	changedTs, err := ptypes.Timestamp(eventTimer.GetChangedTs())
 	if err != nil {
 		return nil, errors.Wrap(err, "can't parse EventTimer ChangedTs")
