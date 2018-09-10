@@ -276,14 +276,22 @@ func newSportDescription(sportDescription *pb.SportDescription, language string)
 
 func newEvent(feedEvent *pb.FeedEvent) (*Event, error) {
 	var err error
-	startTs, startTsValidationError := ptypes.Timestamp(feedEvent.GetStartTs())
-	if startTsValidationError != nil {
-		err = errors.Wrap(startTsValidationError, "can't parse Event StartTs")
+	var startTs time.Time
+	if feedEvent.GetStartTs() != nil {
+		var startTsValidationError error
+		startTs, startTsValidationError = ptypes.Timestamp(feedEvent.GetStartTs())
+		if startTsValidationError != nil {
+			err = errors.Wrap(startTsValidationError, "can't parse Event StartTs")
+		}
 	}
 
-	timer, timerParseError := newEventTimer(feedEvent.GetTimer())
-	if timerParseError != nil {
-		err = errors.Wrap(timerParseError, "can't parse Event Timer")
+	var timer *EventTimer
+	if feedEvent.GetTimer() != nil {
+		var timerParseError error
+		timer, timerParseError = newEventTimer(feedEvent.GetTimer())
+		if timerParseError != nil {
+			err = errors.Wrap(timerParseError, "can't parse Event Timer")
+		}
 	}
 
 	return &Event{
@@ -310,9 +318,6 @@ func newEventStatus(eventStatus pb.FeedEvent_EventStatus) EventStatus {
 }
 
 func newEventTimer(eventTimer *pb.EventTimer) (*EventTimer, error) {
-	if eventTimer == nil {
-		return nil, nil
-	}
 	changedTs, err := ptypes.Timestamp(eventTimer.GetChangedTs())
 	if err != nil {
 		return nil, errors.Wrap(err, "can't parse EventTimer ChangedTs")
