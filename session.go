@@ -204,11 +204,8 @@ func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 			generatedTs = time.Now()
 		}
 
-		// Looks like it is better to publish Events and Markets diffs for single event in parallel
-		wg := sync.WaitGroup{}
-		wg.Add(2)
 
-		go func(eventDiffs []*pb.EventDiff) {
+		func(eventDiffs []*pb.EventDiff) {
 			for _, eventDiff := range eventDiffs {
 				if event := eventDiff.GetEvent(); event == nil {
 
@@ -226,10 +223,9 @@ func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 					Action:      newFeedAction(eventDiff.GetDiffType()),
 				}
 			}
-			wg.Done()
 		}(diff.GetEventDiffs())
 
-		go func(marketDiffs []*pb.MarketsDiff) {
+		func(marketDiffs []*pb.MarketsDiff) {
 			for _, marketsDiffs := range marketDiffs {
 				for _, marketDiff := range marketsDiffs.GetEventMarketsDiffs() {
 					if marketDiff == nil || marketDiff.GetMarket() == nil {
@@ -246,10 +242,7 @@ func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 					}
 				}
 			}
-			wg.Done()
 		}(diff.GetMarketDiffs())
-
-		wg.Wait()
 	}
 }
 
