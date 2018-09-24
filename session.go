@@ -204,7 +204,6 @@ func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 			generatedTs = time.Now()
 		}
 
-
 		func(eventDiffs []*pb.EventDiff) {
 			for _, eventDiff := range eventDiffs {
 				if event := eventDiff.GetEvent(); event == nil {
