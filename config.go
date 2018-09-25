@@ -32,4 +32,7 @@ type Config struct {
 	// If true, client runs keepalive checks even with no active RPCs.
 	PermitWithoutStream bool // false by default.
 
+	//StatusChangeHandler stores function which is invoked any time when status is changed
+	// that function accepts instance of Status struct instance
+	StatusChangeHandler func(Status)
 }

@@ -31,12 +31,17 @@ type Session struct {
 	eventSettlements      chan *EventSettlementEnvelope
 
 	entitiesMutex sync.Mutex
+
+	statusMutex         sync.Mutex
+	statusChangeHandler func(Status)
+	currentStatus       Status
 }
 
 // EventsFeed returns channels of state updates for Events and Markets.
 // when there are communication errors with X-feed servers it closes the channels
 func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error) {
 	if s == nil {
+		s.setStatus(StateRed, s.currentStatus.SettlementsStream)
 		return nil, nil, errors.New("session is not initialised")
 	}
 	s.eventsFeedMutex.Lock()
@@ -53,6 +58,7 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 	err := s.limiter.Wait(context.Background())
 	if err != nil {
 
+		s.setStatus(StateRed, s.currentStatus.SettlementsStream)
 		return nil, nil, err
 	}
 
@@ -61,12 +67,14 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 	if err != nil {
 		cancel()
 
+		s.setStatus(StateRed, s.currentStatus.SettlementsStream)
 		return nil, nil, err
 	}
 
 	s.eventsStream = make(chan *EventEnvelope)
 	s.marketsStream = make(chan *MarketEnvelope)
 
+	s.setStatus(StateYellow, s.currentStatus.SettlementsStream)
 	go func(cancelFunc context.CancelFunc) {
 		defer cancelFunc()
 		for {
@@ -77,6 +85,7 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 				close(s.marketsStream)
 				s.eventsStream = nil
 				s.marketsStream = nil
+				s.setStatus(StateRed, s.currentStatus.SettlementsStream)
 
 				return
 			}
@@ -92,6 +101,7 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 // when there is communication errors with X-feed servers it closes the channels
 func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlementEnvelope, error) {
 	if s == nil {
+		s.setStatus(s.currentStatus.EventsStreamStatus, StateRed)
 		return nil, errors.New("session is not initialised")
 	}
 	s.eventSettlementsMutex.Lock()
@@ -104,6 +114,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 	lConsumed, err := ptypes.TimestampProto(lastConsumed)
 	if err != nil {
 
+		s.setStatus(s.currentStatus.EventsStreamStatus, StateRed)
 		return nil, errors.Wrapf(err, "timestamp %v is invalid time", lastConsumed)
 	}
 
@@ -128,6 +139,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 
 	s.eventSettlements = make(chan *EventSettlementEnvelope)
 
+	s.setStatus(s.currentStatus.EventsStreamStatus, StateYellow)
 	go func(cancelFunc context.CancelFunc) {
 		defer cancelFunc()
 		for {
@@ -136,6 +148,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 				s.logger.Errorf("can't get settlementResponse %v", err)
 				close(s.eventSettlements)
 				s.eventSettlements = nil
+				s.setStatus(s.currentStatus.EventsStreamStatus, StateRed)
 
 				return
 			}
@@ -145,8 +158,12 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 				generatedTs = time.Now()
 			}
 
+			if recoveryComplete := settlementResponse.GetRecoveryComplete(); recoveryComplete == nil {
+				s.setStatus(s.currentStatus.EventsStreamStatus, StateGreen)
+			}
+
 			if eventSettlements := settlementResponse.GetMultipleEventsSettlement(); eventSettlements == nil {
-				s.logger.Errorf("eventSettlements is empty %v", err)
+				s.logger.Infof("eventSettlements is empty %v", err)
 
 				continue
 			}
@@ -198,6 +215,10 @@ func (s *Session) Entities(language string) ([]*SportDescription, error) {
 }
 
 func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
+	if recoveryComplete := eventsResponse.GetRecoveryComplete(); recoveryComplete != nil {
+		s.setStatus(StateGreen, s.currentStatus.SettlementsStream)
+	}
+
 	if diff := eventsResponse.GetDiffsMessage(); diff != nil {
 		generatedTs, err := parseTimestamp(eventsResponse.GetGeneratedTs())
 		if err != nil {
@@ -261,4 +282,13 @@ func parseTimestamp(genTs *timestamp.Timestamp) (time.Time, error) {
 	}
 
 	return generatedTs, nil
+}
+
+func (s *Session) setStatus(eventsStreamStatus, settlementsStream State) {
+	s.statusMutex.Lock()
+	s.currentStatus.EventsStreamStatus = eventsStreamStatus
+	s.currentStatus.SettlementsStream = settlementsStream
+
+	s.statusChangeHandler(s.currentStatus)
+	s.statusMutex.Unlock()
 }

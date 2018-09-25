@@ -9,6 +9,26 @@ import (
 )
 
 type (
+	// State type represents current xfeed integration status
+	State int
+
+	// Status aggregates statuses of StreamEvents and StreamSettlements grpc endpoints
+	Status struct {
+		EventsStreamStatus State
+		SettlementsStream  State
+	}
+)
+
+const (
+	// StateGreen means connection is Ok bets can be accepted
+	StateGreen State = iota + 1
+	// StateYellow means that recovery is in a progress we can't accept bets
+	StateYellow
+	// StateRed means something is wrong we can't accept bets
+	StateRed
+)
+
+type (
 	// SportDescription is sent for each sport which x-feed supports.
 	// It contains list of Periods and MarketTypes which are used for specific sport
 	SportDescription struct {
@@ -58,14 +78,14 @@ type (
 	PointsGroup struct {
 		PointType     PointType
 		GroupPeriodID int32
-		State         []*State
+		State         []*StateEntry
 	}
 
 	// PointType represents type of statistics unit: Score, Red cards, Corners, etc.
 	PointType int32
 
-	// State represents statistics entry for specific participant
-	State struct {
+	// StateEntry represents statistics entry for specific participant
+	StateEntry struct {
 		ParticipantIndex int32
 		Value            int32
 	}
@@ -426,7 +446,7 @@ func newEventPoints(eventPoints *pb.EventPoints) *EventPoints {
 	}
 	for _, pointGroup := range eventPoints.GetPointGroups() {
 		var periodID int32
-		var states []*State
+		var states []*StateEntry
 		if pointGroup.GetGroupParams() != nil {
 			periodID = pointGroup.GetGroupParams().Period
 		}
@@ -435,7 +455,7 @@ func newEventPoints(eventPoints *pb.EventPoints) *EventPoints {
 			if state == nil {
 				continue
 			}
-			s := &State{
+			s := &StateEntry{
 				Value: state.GetValue(),
 			}
 			if state.GetStateParams() != nil {
