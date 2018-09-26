@@ -67,7 +67,7 @@ func NewClient(cfg Config, logger logging.Logger) (*Client, error) {
 		}
 	}()
 
-	var statusChangeHandler = func(Status) {}
+	var statusChangeHandler = func(ConnectionStatus) {}
 	if cfg.StatusChangeHandler != nil {
 		statusChangeHandler = cfg.StatusChangeHandler
 	}
@@ -75,9 +75,9 @@ func NewClient(cfg Config, logger logging.Logger) (*Client, error) {
 	client.session = &Session{
 		clientID:            cfg.ClientID,
 		statusChangeHandler: statusChangeHandler,
-		currentStatus: Status{
-			EventsStreamStatus: StateRed,
-			SettlementsStream:  StateRed,
+		currentStatus: ConnectionStatus{
+			EventsStreamStatus: StatusRed,
+			SettlementsStream:  StatusRed,
 		},
 		clientConn:     client.conn,
 		requestTimeout: cfg.RequestDeadline,

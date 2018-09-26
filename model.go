@@ -9,23 +9,23 @@ import (
 )
 
 type (
-	// State type represents current xfeed integration status
-	State int
+	// EntitiesStreamStatus type represents current xfeed entities stream state
+	EntitiesStreamStatus int
 
-	// Status aggregates statuses of StreamEvents and StreamSettlements grpc endpoints
-	Status struct {
-		EventsStreamStatus State
-		SettlementsStream  State
+	// ConnectionStatus aggregates statuses of StreamEvents and StreamSettlements grpc endpoints
+	ConnectionStatus struct {
+		EventsStreamStatus EntitiesStreamStatus
+		SettlementsStream  EntitiesStreamStatus
 	}
 )
 
 const (
-	// StateGreen means connection is Ok bets can be accepted
-	StateGreen State = iota + 1
-	// StateYellow means that recovery is in a progress we can't accept bets
-	StateYellow
-	// StateRed means something is wrong we can't accept bets
-	StateRed
+	// StatusGreen means connection is Ok bets can be accepted
+	StatusGreen EntitiesStreamStatus = iota + 1
+	// StatusYellow means that recovery is in a progress we can't accept bets
+	StatusYellow
+	// StatusRed means something is wrong we can't accept bets
+	StatusRed
 )
 
 type (

@@ -33,15 +33,15 @@ type Session struct {
 	entitiesMutex sync.Mutex
 
 	statusMutex         sync.Mutex
-	statusChangeHandler func(Status)
-	currentStatus       Status
+	statusChangeHandler func(ConnectionStatus)
+	currentStatus       ConnectionStatus
 }
 
 // EventsFeed returns channels of state updates for Events and Markets.
 // when there are communication errors with X-feed servers it closes the channels
-func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error) {
+func (s *Session) EventsFeed() (<-chan *EventEnvelope, <-chan *MarketEnvelope, error) {
 	if s == nil {
-		s.setStatus(StateRed, s.currentStatus.SettlementsStream)
+		s.setStatus(StatusRed, s.currentStatus.SettlementsStream)
 		return nil, nil, errors.New("session is not initialised")
 	}
 	s.eventsFeedMutex.Lock()
@@ -58,7 +58,7 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 	err := s.limiter.Wait(context.Background())
 	if err != nil {
 
-		s.setStatus(StateRed, s.currentStatus.SettlementsStream)
+		s.setStatus(StatusRed, s.currentStatus.SettlementsStream)
 		return nil, nil, err
 	}
 
@@ -67,14 +67,14 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 	if err != nil {
 		cancel()
 
-		s.setStatus(StateRed, s.currentStatus.SettlementsStream)
+		s.setStatus(StatusRed, s.currentStatus.SettlementsStream)
 		return nil, nil, err
 	}
 
 	s.eventsStream = make(chan *EventEnvelope)
 	s.marketsStream = make(chan *MarketEnvelope)
 
-	s.setStatus(StateYellow, s.currentStatus.SettlementsStream)
+	s.setStatus(StatusYellow, s.currentStatus.SettlementsStream)
 	go func(cancelFunc context.CancelFunc) {
 		defer cancelFunc()
 		for {
@@ -85,7 +85,7 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 				close(s.marketsStream)
 				s.eventsStream = nil
 				s.marketsStream = nil
-				s.setStatus(StateRed, s.currentStatus.SettlementsStream)
+				s.setStatus(StatusRed, s.currentStatus.SettlementsStream)
 
 				return
 			}
@@ -99,9 +99,9 @@ func (s *Session) EventsFeed() (chan *EventEnvelope, chan *MarketEnvelope, error
 
 // SettlementsFeed returns channel of state updates for event settlements from specific point of time.
 // when there is communication errors with X-feed servers it closes the channels
-func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlementEnvelope, error) {
+func (s *Session) SettlementsFeed(lastConsumed time.Time) (<-chan *EventSettlementEnvelope, error) {
 	if s == nil {
-		s.setStatus(s.currentStatus.EventsStreamStatus, StateRed)
+		s.setStatus(s.currentStatus.EventsStreamStatus, StatusRed)
 		return nil, errors.New("session is not initialised")
 	}
 	s.eventSettlementsMutex.Lock()
@@ -114,7 +114,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 	lConsumed, err := ptypes.TimestampProto(lastConsumed)
 	if err != nil {
 
-		s.setStatus(s.currentStatus.EventsStreamStatus, StateRed)
+		s.setStatus(s.currentStatus.EventsStreamStatus, StatusRed)
 		return nil, errors.Wrapf(err, "timestamp %v is invalid time", lastConsumed)
 	}
 
@@ -139,7 +139,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 
 	s.eventSettlements = make(chan *EventSettlementEnvelope)
 
-	s.setStatus(s.currentStatus.EventsStreamStatus, StateYellow)
+	s.setStatus(s.currentStatus.EventsStreamStatus, StatusYellow)
 	go func(cancelFunc context.CancelFunc) {
 		defer cancelFunc()
 		for {
@@ -148,7 +148,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 				s.logger.Errorf("can't get settlementResponse %v", err)
 				close(s.eventSettlements)
 				s.eventSettlements = nil
-				s.setStatus(s.currentStatus.EventsStreamStatus, StateRed)
+				s.setStatus(s.currentStatus.EventsStreamStatus, StatusRed)
 
 				return
 			}
@@ -159,7 +159,7 @@ func (s *Session) SettlementsFeed(lastConsumed time.Time) (chan *EventSettlement
 			}
 
 			if recoveryComplete := settlementResponse.GetRecoveryComplete(); recoveryComplete == nil {
-				s.setStatus(s.currentStatus.EventsStreamStatus, StateGreen)
+				s.setStatus(s.currentStatus.EventsStreamStatus, StatusGreen)
 			}
 
 			if eventSettlements := settlementResponse.GetMultipleEventsSettlement(); eventSettlements == nil {
@@ -216,7 +216,7 @@ func (s *Session) Entities(language string) ([]*SportDescription, error) {
 
 func (s *Session) publish(eventsResponse *pb.StreamEventsResponse) {
 	if recoveryComplete := eventsResponse.GetRecoveryComplete(); recoveryComplete != nil {
-		s.setStatus(StateGreen, s.currentStatus.SettlementsStream)
+		s.setStatus(StatusGreen, s.currentStatus.SettlementsStream)
 	}
 
 	if diff := eventsResponse.GetDiffsMessage(); diff != nil {
@@ -284,7 +284,7 @@ func parseTimestamp(genTs *timestamp.Timestamp) (time.Time, error) {
 	return generatedTs, nil
 }
 
-func (s *Session) setStatus(eventsStreamStatus, settlementsStream State) {
+func (s *Session) setStatus(eventsStreamStatus, settlementsStream EntitiesStreamStatus) {
 	s.statusMutex.Lock()
 	s.currentStatus.EventsStreamStatus = eventsStreamStatus
 	s.currentStatus.SettlementsStream = settlementsStream
