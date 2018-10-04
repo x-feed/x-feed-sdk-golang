@@ -314,13 +314,18 @@ func newEvent(feedEvent *pb.FeedEvent) (*Event, error) {
 		}
 	}
 
+	var start *time.Time
+	if !startTs.IsZero() {
+		start = &startTs
+	}
+
 	return &Event{
 		ID:           feedEvent.GetEventId(),
 		SportID:      feedEvent.GetSportId(),
 		Category:     feedEvent.GetCategory(),
 		League:       feedEvent.GetLeague(),
 		Status:       newEventStatus(feedEvent.GetStatus()),
-		Start:        &startTs,
+		Start:        start,
 		Participants: feedEvent.GetParticipants(),
 		Timer:        timer,
 	}, err
